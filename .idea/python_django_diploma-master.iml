@@ -5,4 +5,13 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="TemplatesService">
+    <option name="TEMPLATE_FOLDERS">
+      <list>
+        <option value="$MODULE_DIR$/megano/frontend/templates" />
+        <option value="$MODULE_DIR$/megano/shop/templates" />
+        <option value="$MODULE_DIR$/megano/user/templates" />
+      </list>
+    </option>
+  </component>
 </module>
