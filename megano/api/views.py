@@ -87,6 +87,7 @@ class LogoutView(APIView):
             request.user.auth_token.delete()
             logout(request)
             # Token.objects.filter(user=request.user.id).delete()
+            # Token.objects.filter(user=request.user.id).delete()
             return Response({'code': '200', 'user': username, 'message': 'successfully logout'}, status=status.HTTP_200_OK)
         else:
             return Response({'code': '500', 'message': 'user is not authenticated'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
