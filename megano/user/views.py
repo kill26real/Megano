@@ -2,8 +2,10 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic import DetailView, UpdateView
-from .models import Profile
+
+from .models import Profile, Basket
 from .forms import AuthForm, SignUpForm
+
 from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
@@ -13,17 +15,23 @@ from django.contrib.auth.models import Group
 from django.core.cache import cache
 from shop.models import Order, Category
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 
-class LoginView(LoginView):
+
+
+class MyLoginView(LoginView):
     template_name = 'user/signIn.html'
+    # success_url = redirect('shop/catalog/')
+
+    def get_success_url(self):
+        return reverse('index')
 
 
-class LogoutView(LogoutView):
+class MyLogoutView(LogoutView):
     # template_name = 'users/logout.html'
     next_page = '/'
-
 
 
 def register_view(request: HttpRequest):
@@ -32,15 +40,12 @@ def register_view(request: HttpRequest):
         if form.is_valid():
             user = form.save()
             date_of_birth = form.cleaned_data.get('date_of_birth')
-            city = form.cleaned_data.get('city')
             phone = form.cleaned_data.get('phone_number')
             e_mail = form.cleaned_data.get('e_mail')
             if form.cleaned_data.get('avatar'):
                 avatar = form.cleaned_data.get('avatar')
                 Profile.objects.create(
                     user=user,
-                    city=city,
-                    date_of_birth=date_of_birth,
                     phone_number=phone,
                     e_mail=e_mail,
                     avatar=avatar,
@@ -48,8 +53,6 @@ def register_view(request: HttpRequest):
             else:
                 Profile.objects.create(
                     user=user,
-                    city=city,
-                    date_of_birth=date_of_birth,
                     phone_number=phone,
                     e_mail=e_mail,
                     avatar=' ',

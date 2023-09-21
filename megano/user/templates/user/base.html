@@ -63,7 +63,7 @@
                     <a class="ControlPanel-title" href="{% url 'user:profile' pk=user.pk %}">{{ user.username }}</a>
                   </div>
                   <div class="row-block">
-                    <a class="ControlPanel-title" href="#" @click.prevent="signOut()">Log out</a>
+                    <a class="ControlPanel-title" href="{% url 'user:logout' %}">Log out</a>
                   </div>
                 {% else %}
                   <div class="row-block"><a class="ControlPanel-title" href="{% url 'user:sign-in' %}">Login</a></div>

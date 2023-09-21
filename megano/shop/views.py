@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from .models import Order, Product, Comment, Category, Image
+from .models import Order, Product, Review, Category, Image, Specification, Sale, Subcategory
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
+
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class ProductsListView(ListView):
@@ -12,13 +14,28 @@ class ProductsListView(ListView):
 
 class ProductsIndexView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
-        popular = Product.objects.order_by('sort_index', 'sold_amount')[:8]
+        popular = Product.objects.order_by('sold_amount')[:8]
         limited = Product.objects.filter(limited=True)[:15]
         context = {
             'popularCards': popular,
             'limitedCards': limited,
         }
         return render(request, 'shop/index.html', context=context)
+
+
+
+class ProductsDetailsView(DetailView):
+    template_name = 'shop/product.html'
+    model = Product
+    slug_field = Product.name
+    context_object_name = 'product'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['images'] = Image.objects.filter(product=self.object.pk)
+        return context
+
+
 
 # class ProductsIndexView(View):
 #
@@ -41,21 +58,6 @@ class ProductsIndexView(View):
 #         context = super().get_context_data(**kwargs)
 #         context['images'] = Image.objects.filter(post=self.object.pk)
 #         return context
-
-
-
-
-class ProductsDetailsView(DetailView):
-    template_name = 'shop/product.html'
-    model = Product
-    slug_field = Product.name
-    context_object_name = 'product'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['images'] = Image.objects.filter(product=self.object.pk)
-        return context
-
 
 
 
