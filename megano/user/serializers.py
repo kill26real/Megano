@@ -24,19 +24,16 @@ class UserLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True},
+        }
 
 
 class AuthUserSerializer(serializers.ModelSerializer):
-    auth_token = serializers.SerializerMethodField()
-
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'is_staff')
         read_only_fields = ('id', 'is_active', 'is_staff')
-
-    def get_auth_token(self, obj):
-        token = Token.objects.create(user=obj)
-        return token.key
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -53,27 +50,29 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name')
         extra_kwargs = {
             'first_name': {'required': True},
-            'last_name': {'required': True}
+            'last_name': {'required': True},
+            'password': {'write_only': True},
+            'password2': {'write_only': True}
         }
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-
-        return attrs
-
-    def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
-        )
-
-        user.set_password(validated_data['password'])
-        user.save()
-
-        return user
+    # def validate(self, attrs):
+    #     if attrs['password'] != attrs['password2']:
+    #         raise serializers.ValidationError({"password": "Password fields didn't match."})
+    #
+    #     return attrs
+    #
+    # def create(self, validated_data):
+    #     user = User.objects.create(
+    #         username=validated_data['username'],
+    #         email=validated_data['email'],
+    #         first_name=validated_data['first_name'],
+    #         last_name=validated_data['last_name']
+    #     )
+    #
+    #     user.set_password(validated_data['password'])
+    #     user.save()
+    #
+    #     return user
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -150,9 +149,11 @@ class AddBasketItemSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     product_id = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, many=True)
 
+
     def get_product(self, obj):
         queryset = Product.objects.filter(items=obj)
         return [ProductShortSerializer(q).data for q in queryset]
+
 
     class Meta:
         model = BasketItem
@@ -186,36 +187,4 @@ class BasketSerializer(serializers.ModelSerializer):
         items = basket.items.all()
         total = sum([item.quantity * item.product.price for item in items])
         return total
-
-
-
-    # def update(self, instance, validated_data):
-    #     items_data = validated_data.pop('items')
-    #     basket = instance.update(**validated_data)
-    #     for item in items_data:
-    #         BasketItem.objects.create(product=item['product_id'], quantity=item["quantity"])
-    #
-    #     return basket
-
-    # def validate_product_id(self, value):
-    #     if not Product.objects.filter(pk=value).exists():
-    #         raise serializers.ValidationError('There is no product associated with the given ID')
-    #     return value
-
-    # def save(self, **kwargs):
-    #     basket_id = self.context['basket_id']
-    #     product_id = self.validated_data['product_id']
-    #     quantity = self.validated_data['quantity']
-    #     try:
-    #         basket_item = BasketItem.objects.get(product_id=product_id, basket_id=basket_id)
-    #         basket_item.quantity += quantity
-    #         basket_item.save()
-    #         self.instance = basket_item
-    #     except:
-    #         self.instance = BasketItem.objects.create(basket=basket_id, **self.validated_data)
-    #
-    #     return self.instance
-
-
-
 

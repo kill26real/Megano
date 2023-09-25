@@ -17,4 +17,4 @@ class CatalogFilter(FilterSet):
 
     class Meta:
         model = Product
-        fields = ['name', 'price', 'free_delivery']
+        fields = ['name', 'free_delivery']

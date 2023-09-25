@@ -33,13 +33,12 @@ from manage.models import DeliveryType
 
 
 class Image(models.Model):
-
     img = models.ImageField(upload_to='files/')
     alt = models.CharField(null=False, blank=True, max_length=100)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
     #     limit_choices_to={"model__in": ("Product", "Category", "Subcategory", "Profile")},
-    #     related_name="votes")
+    #     related_name="images")
     object_id = models.PositiveIntegerField()
     object = GenericForeignKey('content_type', 'object_id')
 
@@ -59,7 +58,6 @@ class Tag(models.Model):
 
 
 class Specification(models.Model):
-
     name = models.CharField(max_length=100, null=False, blank=True)
     value = models.CharField(max_length=100, null=False, blank=True)
 
@@ -68,7 +66,6 @@ class Specification(models.Model):
 
 
 class Category(models.Model):
-
     class Meta:
         ordering = ['title']
         verbose_name = "category"
@@ -79,7 +76,6 @@ class Category(models.Model):
     icon = GenericRelation(Image, related_name='icon')
     archived = models.BooleanField(default=True)
     slug = models.SlugField(max_length=40)
-
 
     def __str__(self):
         return self.title
@@ -98,17 +94,14 @@ class Subcategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
     slug = models.SlugField(max_length=40)
 
-
     def __str__(self):
         return self.title
-
 
 
 class Product(models.Model):
     class Meta:
         ordering = ['name', 'price']
         verbose_name = "product"
-
 
     id = models.AutoField(primary_key=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
@@ -127,7 +120,6 @@ class Product(models.Model):
     reviews_count = models.IntegerField(default=0)
     slug = models.SlugField(max_length=40)
 
-
     def __str__(self):
         return self.name
 
@@ -139,13 +131,21 @@ class Product(models.Model):
         return tag_list
 
     @property
+    def product_category(self):
+        return f'{self.category.title}, id: {self.category.id}'
+
+    @property
+    def product_subcategory(self):
+        return f'{self.subcategory.title}, id: {self.category.id}'
+
+    @property
     def rating(self):
         rat = 0
         i = 0
         reviews = self.reviews.all()
         print(reviews)
         if not reviews:
-            return 5
+            return 5.0
         sums = [review.rate for review in reviews]
         for su in sums:
             i += 1
@@ -154,19 +154,15 @@ class Product(models.Model):
         return total
 
 
-
-
 class Review(models.Model):
     class Meta:
         ordering = ['-published_at']
-
 
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField(null=False, blank=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     rate = models.IntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(5)])
     published_at = models.DateTimeField(auto_now_add=True)
-
 
     def text_short(self):
         if len(str(self.text)) < 100:
@@ -177,10 +173,7 @@ class Review(models.Model):
         return f'author: {self.author.username}, text: {self.text[:10]}...'
 
 
-
 class Sale(models.Model):
-
-
     id = models.AutoField(primary_key=True)
     old_price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
     new_price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
@@ -212,7 +205,7 @@ class Order(models.Model):
     id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    delivery_type = models.ForeignKey(DeliveryType, on_delete=models.PROTECT)
+    delivery_type = models.ForeignKey(DeliveryType, on_delete=models.PROTECT, related_name='orders')
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
     city = models.CharField(max_length=40, blank=True)
     delivery_adress = models.CharField(max_length=100, blank=True)
@@ -238,14 +231,31 @@ class Order(models.Model):
             total += su
         return total + self.delivery_price
 
+    @property
+    def delivery(self):
+        return self.delivery_type.name
 
+    @property
+    def username(self):
+        return self.user.username
+
+    @property
+    def email(self):
+        return self.user.email
+
+    @property
+    def phone(self):
+        if self.user.profile:
+            return self.user.profile.phone
+        return 'no phone'
 
     @property
     def status(self):
         if self.payment:
             for pay in self.payment.all():
-                if pay.paid == 'P':
+                if pay.paid:
                     return 'Paid'
+            return 'Payment failed'
         return 'Created'
 
     def __str__(self):
@@ -253,7 +263,6 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-
     id = models.AutoField(primary_key=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items')
@@ -267,9 +276,7 @@ class OrderItem(models.Model):
         return f'{self.product.name} - {self.quantity}: {self.sum}'
 
 
-
 class Payment(models.Model):
-
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     number = models.IntegerField(blank=False, null=True)
     created_at = models.DateTimeField(auto_now=True)
@@ -279,7 +286,6 @@ class Payment(models.Model):
 
     def __str__(self):
         return f'Payment. User:{self.user}, sum: {self.order.total_cost}'
-
 
 # class Category(MPTTModel):
 #
@@ -299,4 +305,3 @@ class Payment(models.Model):
 #
 #     def __str__(self):
 #         return self.title
-
