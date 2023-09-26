@@ -342,7 +342,7 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         if self.request.method == "PUT":
             return UpdateOrderSerializer
-        elif self.request.method == "PATCH":
+        elif self.request.method == "DELETE":
             return UpdateOrderSerializer
         return OrderSerializer
 
@@ -398,7 +398,35 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
-    def patch(self, request, *args, **kwargs):
+    # def patch(self, request, *args, **kwargs):
+    #     user_id = request.user.id
+    #     product_id = request.data.get('product_id')[0]
+    #     quantity = int(request.data.get('quantity'))
+    #
+    #     try:
+    #         product = Product.objects.get(id=product_id)
+    #     except ObjectDoesNotExist:
+    #         return Response({'message': 'Product not found'}, status=404)
+    #
+    #     order = Order.objects.filter(user=user_id).first()
+    #
+    #     try:
+    #         order_item = OrderItem.objects.get(order=order, product=product)
+    #     except ObjectDoesNotExist:
+    #         return Response({'message': 'Product not in order'}, status=404)
+    #
+    #     if order_item.quantity == quantity:
+    #         order_item.delete()
+    #     elif order_item.quantity > quantity:
+    #         order_item.quantity -= quantity
+    #         order_item.save()
+    #     else:
+    #         return Response({'message': 'Quantity more than in order. Try again'}, status=404)
+    #
+    #     serializer = OrderSerializer(order)
+    #     return Response(serializer.data)
+
+    def delete(self, request, *args, **kwargs):
         user_id = request.user.id
         product_id = request.data.get('product_id')[0]
         quantity = int(request.data.get('quantity'))
@@ -425,9 +453,7 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
 
         serializer = OrderSerializer(order)
         return Response(serializer.data)
-
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(self, request, *args, **kwargs)
+        # return self.destroy(self, request, *args, **kwargs)
 
 
 class PaymentView(CreateAPIView):
