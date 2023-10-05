@@ -35,11 +35,9 @@ from user.serializers import UserSerializer, UserLoginSerializer, AuthUserSerial
     DeleteBasketItemSerializer, PasswordSerializer, CreateProfileSerializer, ChangeAvatarSerializer
 from user.models import Profile, Basket, BasketItem
 from shop.serializers import ProductShortSerializer, ProductSerializer, CategorySerializer, OrderSerializer, \
-    ReviewSerializer, \
-    SaleSerializer, PaymentSerializer, OrderItemSerializer, CreateOrderSerializer, TagSerializer, \
-    AddOrderItemSerializer, \
-    DeleteOrderItemSerializer, UpdateOrderSerializer
-from shop.models import Order, Product, Review, Category, Image, Specification, Sale, Subcategory, OrderItem, Payment, \
+    ReviewSerializer, SaleSerializer, PaymentSerializer, OrderItemSerializer, CreateOrderSerializer, TagSerializer, \
+    UpdateOrderSerializer
+from shop.models import Product, Order, Image, Specification, Category, Review, Sale, Subcategory, OrderItem, Payment, \
     Tag
 from manage.models import DeliveryType
 from .utils import create_user_account, get_and_authenticate_user, IsOwnerOrReadOnly, IsOwner
@@ -342,8 +340,6 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         if self.request.method == "PUT":
             return UpdateOrderSerializer
-        elif self.request.method == "DELETE":
-            return UpdateOrderSerializer
         return OrderSerializer
 
     def get(self, request, *args, **kwargs):
@@ -358,8 +354,10 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
         except ObjectDoesNotExist:
             return Response({'message': 'Order with this pk is not exist or order is not yours'}, status=404)
 
-        product_id = request.data.get('product').split(':')[1]
-        quantity = request.data.get('quantity')
+
+
+        product_id = request.data.get('add_product').split(':')[1]
+        quantity = request.data.get('quantity_of_product_to_add')
 
         try:
             quantity_int = int(quantity)
@@ -367,17 +365,46 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
             return Response({'code': '400', 'message': 'unexpected value for product quantity'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        try:
+        if quantity_int == 0:
+            pass
+        else:
             product = Product.objects.get(id=product_id)
             if quantity_int > product.amount:
                 return Response({'code': '400', 'message': f'we have only {product.amount} items of '
-                                                           f'{product.name}, but {quantity_int} was given'},
+                                                           f'{product.name}, but {quantity_int} was given. Try again'},
                                 status=status.HTTP_400_BAD_REQUEST)
             order_item, created = OrderItem.objects.get_or_create(order=order, product=product)
             order_item.quantity += quantity_int
             order_item.save()
-        except ObjectDoesNotExist:
+
+
+
+
+        delete_product_id = request.data.get('delete_product').split(':')[1]
+        delete_quantity = request.data.get('quantity_of_product_to_delete')
+
+        try:
+            delete_quantity_int = int(delete_quantity)
+        except ValueError:
+            return Response({'code': '400', 'message': 'unexpected value for product quantity'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if delete_quantity_int == 0:
             pass
+        else:
+            order_item = OrderItem.objects.get(product=Product.objects.get(id=delete_product_id), order=order)
+            if delete_quantity_int > order_item.quantity:
+                return Response({'code': '400', 'message': f'we have only {order_item.quantity} items of '
+                                                           f'{order_item.product.name}, but '
+                                                           f'{delete_quantity_int} was given. Try again'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            elif delete_quantity_int == order_item.quantity:
+                order_item.delete()
+            else:
+                order_item.quantity -= delete_quantity_int
+                order_item.save()
+
+
 
         city = request.data.get('city')
         promocode = request.data.get('promocode')
@@ -398,62 +425,9 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
-    # def patch(self, request, *args, **kwargs):
-    #     user_id = request.user.id
-    #     product_id = request.data.get('product_id')[0]
-    #     quantity = int(request.data.get('quantity'))
-    #
-    #     try:
-    #         product = Product.objects.get(id=product_id)
-    #     except ObjectDoesNotExist:
-    #         return Response({'message': 'Product not found'}, status=404)
-    #
-    #     order = Order.objects.filter(user=user_id).first()
-    #
-    #     try:
-    #         order_item = OrderItem.objects.get(order=order, product=product)
-    #     except ObjectDoesNotExist:
-    #         return Response({'message': 'Product not in order'}, status=404)
-    #
-    #     if order_item.quantity == quantity:
-    #         order_item.delete()
-    #     elif order_item.quantity > quantity:
-    #         order_item.quantity -= quantity
-    #         order_item.save()
-    #     else:
-    #         return Response({'message': 'Quantity more than in order. Try again'}, status=404)
-    #
-    #     serializer = OrderSerializer(order)
-    #     return Response(serializer.data)
 
     def delete(self, request, *args, **kwargs):
-        user_id = request.user.id
-        product_id = request.data.get('product_id')[0]
-        quantity = int(request.data.get('quantity'))
-
-        try:
-            product = Product.objects.get(id=product_id)
-        except ObjectDoesNotExist:
-            return Response({'message': 'Product not found'}, status=404)
-
-        order = Order.objects.filter(user=user_id).first()
-
-        try:
-            order_item = OrderItem.objects.get(order=order, product=product)
-        except ObjectDoesNotExist:
-            return Response({'message': 'Product not in order'}, status=404)
-
-        if order_item.quantity == quantity:
-            order_item.delete()
-        elif order_item.quantity > quantity:
-            order_item.quantity -= quantity
-            order_item.save()
-        else:
-            return Response({'message': 'Quantity more than in order. Try again'}, status=404)
-
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
-        # return self.destroy(self, request, *args, **kwargs)
+        return self.destroy(self, request, *args, **kwargs)
 
 
 class PaymentView(CreateAPIView):

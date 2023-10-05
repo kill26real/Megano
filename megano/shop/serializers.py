@@ -194,43 +194,23 @@ class CreateOrderSerializer(serializers.ModelSerializer):
         exclude = ['user']
 
 
-class AddOrderItemSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField()
-    product_id = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, many=True)
-
-    def get_product(self, obj):
-        # queryset = Product.objects.filter(order_items=obj)
-        queryset = Product.objects.all()
-        return [q.name for q in queryset]
-        # return [ProductShortSerializer(q).data for q in queryset]
-
-
-    class Meta:
-        model = OrderItem
-        fields = ["product", "product_id", "quantity"]
-
 class UpdateOrderSerializer(serializers.ModelSerializer):
     city = serializers.CharField(max_length=40)
     delivery_adress = serializers.CharField(max_length=100)
     promocode = serializers.CharField(max_length=20)
     payment_type = serializers.ChoiceField(choices=Order.PAYMENT_TYPE_CHOICES)
     delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
-    product = serializers.ChoiceField(choices=[f'{prod.name}, id:{prod.id}' for prod in Product.objects.all().order_by('name')], default=0)
-    quantity = serializers.IntegerField(default=0)
+    add_product = serializers.ChoiceField(choices=[f'{prod.name}, id:{prod.id}' for prod in Product.objects.all().order_by('name')], default=0)
+    quantity_of_product_to_add = serializers.IntegerField(default=0)
+    delete_product = serializers.ChoiceField(choices=[f'{prod.name}, id:{prod.id}' for prod in Product.objects.all().order_by('name')], default=0)
+    quantity_of_product_to_delete = serializers.IntegerField(default=0)
+
 
 
     class Meta:
         model = Order
         exclude = ['user']
 
-
-class DeleteOrderItemSerializer(serializers.ModelSerializer):
-    product = ProductShortSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, many=True)
-
-    class Meta:
-        model = OrderItem
-        fields = ["product", "product_id", "quantity"]
 
 
 
