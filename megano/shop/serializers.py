@@ -28,11 +28,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
-    img = serializers.ImageField(max_length=None, use_url=True, allow_null=False, required=True)
+    src = serializers.ImageField(max_length=None, use_url=True, allow_null=False, required=True)
 
     class Meta:
         model = Image
-        fields = ['img', 'alt']
+        fields = ['src', 'alt']
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -51,20 +51,19 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class SubcategorySerializer(serializers.ModelSerializer):
-    icon = ImageSerializer(many=True, read_only=True)
+    image = ImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Subcategory
-        fields = ['id', 'title', 'icon']
+        fields = ['id', 'title', 'image']
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    icon = ImageSerializer(many=True, read_only=True)
+    image = ImageSerializer(many=True, read_only=True)
     subcategories = SubcategorySerializer(many=True, read_only=True)
-
     class Meta:
         model = Category
-        fields = ['id', 'title', 'icon', 'subcategories']
+        fields = ['id', 'title', 'image', 'subcategories']
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -72,7 +71,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['author', 'text', 'rate', 'published_at']
+        fields = ['author', 'text', 'rate', 'date']
 
 
 class ProductSubcategorySerializer(serializers.ModelSerializer):
@@ -94,54 +93,61 @@ class SpecificationSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    reviews = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
     images = ImageSerializer(many=True, read_only=True)
-    product_tags = serializers.ReadOnlyField()
+    # product_tags = serializers.ReadOnlyField()
     specifications = SpecificationSerializer(many=True, read_only=True)
-    product_category = serializers.ReadOnlyField()
-    product_subcategory = serializers.ReadOnlyField()
+    date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    # product_category = serializers.ReadOnlyField()
+    # product_subcategory = serializers.ReadOnlyField()
 
     # category = ProductCategorySerializer(read_only=True)
-    # subcategory = ProductSubcategorySerializer(read_only=True)
+    # category = ProductSubcategorySerializer(read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'product_category', 'product_subcategory', 'amount', 'created_at',
-                  'description', 'free_delivery', 'images', 'product_tags', 'reviews', 'specifications', 'rating']
+        fields = ['id', 'title', 'price', 'category', 'count', 'date',
+                  'description', 'full_description', 'free_delivery', 'images', 'tags', 'comments', 'specifications', 'rating']
 
-    def get_reviews(self, obj):
+    def get_comments(self, obj):
         queryset = Review.objects.filter(product=obj)
         return [ReviewSerializer(q).data for q in queryset]
 
 
+    def get_category(self, obj):
+        return obj.subcategory.id
+
+
 class ProductShortSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, read_only=True)
-    product_tags = serializers.ReadOnlyField()
-    product_category = serializers.ReadOnlyField()
-    product_subcategory = serializers.ReadOnlyField()
-
+    tags = TagSerializer(many=True, read_only=True)
+    date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    category = serializers.SerializerMethodField()
+    # product_category = serializers.ReadOnlyField()
+    # product_subcategory = serializers.ReadOnlyField()
     # category = ProductCategorySerializer(read_only=True)
     # subcategory = ProductSubcategorySerializer(read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'product_category', 'product_subcategory', 'amount', 'created_at',
-                  'description',
-                  'free_delivery', 'images', 'product_tags', 'reviews_count', 'rating']
+        fields = ['id', 'category', 'price', 'count', 'date', 'title',
+                  'description', 'free_delivery', 'images', 'tags', 'reviews', 'rating']
 
-
-class SaleProductSerializer(serializers.ModelSerializer):
-    images = ImageSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Product
-        fields = ['name', 'images']
+    def get_category(self, obj):
+        return obj.subcategory.id
 
 
 class SaleSerializer(serializers.ModelSerializer):
-    product = SaleProductSerializer(read_only=True)
-
+    title = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
     class Meta:
         model = Sale
-        fields = ['id', 'old_price', 'new_price', 'date_from', 'date_to', 'product']
+        fields = ['id', 'price', 'sale_price', 'date_from', 'date_to', 'title', 'images']
+
+    def get_title(self, obj):
+        return obj.product.title
+
+    def get_images(self, obj):
+        queryset = obj.product.images.all()
+        return [ImageSerializer(q).data for q in queryset]
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -170,7 +176,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'created_at', 'username', 'email', 'phone', 'delivery', 'payment_type', 'total_cost',
-                  'delivery_price', 'promocode', 'status', 'city', 'delivery_adress', 'items']
+                  'delivery_price', 'promocode', 'status', 'city', 'address', 'items']
 
     def get_items(self, obj):
         queryset = OrderItem.objects.filter(order=obj)
@@ -179,15 +185,15 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class CreateOrderSerializer(serializers.ModelSerializer):
     city = serializers.CharField(max_length=40)
-    delivery_adress = serializers.CharField(max_length=100)
+    address = serializers.CharField(max_length=100)
     promocode = serializers.CharField(max_length=20)
     payment_type = serializers.ChoiceField(choices=Order.PAYMENT_TYPE_CHOICES)
     delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
 
     for product in Product.objects.all():
-        product_name_underline = product.name.replace(" ", "_")
+        product_title_underline = product.title.replace(" ", "_")
 
-        exec(f"{product_name_underline} = serializers.IntegerField(default=0)")
+        exec(f"{product_title_underline} = serializers.IntegerField(default=0)")
 
     class Meta:
         model = Order
@@ -196,13 +202,13 @@ class CreateOrderSerializer(serializers.ModelSerializer):
 
 class UpdateOrderSerializer(serializers.ModelSerializer):
     city = serializers.CharField(max_length=40)
-    delivery_adress = serializers.CharField(max_length=100)
+    address = serializers.CharField(max_length=100)
     promocode = serializers.CharField(max_length=20)
     payment_type = serializers.ChoiceField(choices=Order.PAYMENT_TYPE_CHOICES)
     delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
-    add_product = serializers.ChoiceField(choices=[f'{prod.name}, id:{prod.id}' for prod in Product.objects.all().order_by('name')], default=0)
+    add_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)
     quantity_of_product_to_add = serializers.IntegerField(default=0)
-    delete_product = serializers.ChoiceField(choices=[f'{prod.name}, id:{prod.id}' for prod in Product.objects.all().order_by('name')], default=0)
+    delete_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)
     quantity_of_product_to_delete = serializers.IntegerField(default=0)
 
 

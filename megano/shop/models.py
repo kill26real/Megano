@@ -33,7 +33,7 @@ from manage.models import DeliveryType
 
 
 class Image(models.Model):
-    img = models.ImageField(upload_to='files/')
+    src = models.ImageField(upload_to='files/')
     alt = models.CharField(null=False, blank=True, max_length=100)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
@@ -73,7 +73,7 @@ class Category(models.Model):
 
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=40)
-    icon = GenericRelation(Image, related_name='icon')
+    image = GenericRelation(Image, related_name='image')
     archived = models.BooleanField(default=True)
     slug = models.SlugField(max_length=40)
 
@@ -89,7 +89,7 @@ class Subcategory(models.Model):
 
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=40)
-    icon = GenericRelation(Image, related_name='icon')
+    image = GenericRelation(Image, related_name='image')
     archived = models.BooleanField(default=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
     slug = models.SlugField(max_length=40)
@@ -100,28 +100,29 @@ class Subcategory(models.Model):
 
 class Product(models.Model):
     class Meta:
-        ordering = ['name', 'price']
+        ordering = ['title', 'price']
         verbose_name = "product"
 
     id = models.AutoField(primary_key=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
     subcategory = models.ForeignKey(Subcategory, on_delete=models.PROTECT, related_name='products')
     price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
-    amount = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=40)
+    count = models.IntegerField(default=0)
+    date = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=40)
     description = models.TextField(null=False, blank=True)
+    full_description = models.TextField(null=False, blank=True)
     sold_amount = models.IntegerField(default=0)
     limited = models.BooleanField(default=0)
     free_delivery = models.BooleanField(default=0)
     images = GenericRelation(Image, related_query_name='product')
     tags = models.ManyToManyField(Tag, related_query_name='products')
     specifications = models.ManyToManyField(Specification, related_name='products')
-    reviews_count = models.IntegerField(default=0)
+    reviews = models.IntegerField(default=0)
     slug = models.SlugField(max_length=40)
 
     def __str__(self):
-        return self.name
+        return self.title
 
     @property
     def product_tags(self):
@@ -142,8 +143,7 @@ class Product(models.Model):
     def rating(self):
         rat = 0
         i = 0
-        reviews = self.reviews.all()
-        print(reviews)
+        reviews = self.comments.all()
         if not reviews:
             return 5.0
         sums = [review.rate for review in reviews]
@@ -156,13 +156,13 @@ class Product(models.Model):
 
 class Review(models.Model):
     class Meta:
-        ordering = ['-published_at']
+        ordering = ['-date']
 
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField(null=False, blank=False)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
     rate = models.IntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(5)])
-    published_at = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(auto_now_add=True)
 
     def text_short(self):
         if len(str(self.text)) < 100:
@@ -175,8 +175,8 @@ class Review(models.Model):
 
 class Sale(models.Model):
     id = models.AutoField(primary_key=True)
-    old_price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
-    new_price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
+    price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
+    sale_price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
     date_from = models.DateTimeField(default=datetime.datetime.now, blank=True)
     date_to = models.DateTimeField(default=datetime.datetime.now, blank=True)
     product = models.OneToOneField(Product, on_delete=models.CASCADE)
@@ -208,7 +208,7 @@ class Order(models.Model):
     delivery_type = models.ForeignKey(DeliveryType, on_delete=models.PROTECT, related_name='orders')
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
     city = models.CharField(max_length=40, blank=True)
-    delivery_adress = models.CharField(max_length=100, blank=True)
+    address = models.CharField(max_length=100, blank=True)
     promocode = models.CharField(max_length=20, null=False, blank=True)
 
     @property

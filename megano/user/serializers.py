@@ -76,12 +76,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
-    img = serializers.ImageField(max_length=None, use_url=True, allow_null=False, required=True)
+    src = serializers.ImageField(max_length=None, use_url=True, allow_null=False, required=True)
     alt = serializers.CharField(max_length=40, default='avatar')
     class Meta:
         model = Image
         # fields = '__all__'
-        fields = ['img', 'alt']
+        fields = ['src', 'alt']
 
 
 

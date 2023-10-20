@@ -297,20 +297,20 @@ class OrdersList(ListCreateAPIView):
         user = request.user
 
         city = request.data.get('city')
-        delivery_adress = request.data.get('delivery_adress')
+        address = request.data.get('address')
         promocode = request.data.get('promocode')
         delivery_type = request.data.get('delivery_type')
         payment_type = request.data.get('payment_type')
         del_type = DeliveryType.objects.get(name=delivery_type)
 
-        order = Order.objects.create(user=user, city=city, delivery_adress=delivery_adress, promocode=promocode,
+        order = Order.objects.create(user=user, city=city, address=address, promocode=promocode,
                                      delivery_type=del_type, payment_type=payment_type)
         order.save()
 
         for product in Product.objects.all():
-            if product.name.replace(" ", "_") in request.data.keys():
-                product_name_underline = product.name.replace(" ", "_")
-                quantity = request.data.get(f'{product_name_underline}')
+            if product.title.replace(" ", "_") in request.data.keys():
+                product_title_underline = product.title.replace(" ", "_")
+                quantity = request.data.get(f'{product_title_underline}')
                 if quantity == '':
                     continue
                 try:
@@ -318,9 +318,9 @@ class OrdersList(ListCreateAPIView):
                 except ValueError:
                     return Response({'code': '400', 'message': 'unexpected value for product quantity'},
                                     status=status.HTTP_400_BAD_REQUEST)
-                if quantity_int > product.amount:
-                    return Response({'code': '400', 'message': f'we have only {product.amount} items of '
-                                                               f'{product.name}, but {quantity_int} was given'},
+                if quantity_int > product.count:
+                    return Response({'code': '400', 'message': f'we have only {product.count} items of '
+                                                               f'{product.title}, but {quantity_int} was given'},
                                     status=status.HTTP_400_BAD_REQUEST)
 
                 order_item = OrderItem.objects.create(order=order, product=product, quantity=quantity_int)
@@ -369,16 +369,13 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
             pass
         else:
             product = Product.objects.get(id=product_id)
-            if quantity_int > product.amount:
-                return Response({'code': '400', 'message': f'we have only {product.amount} items of '
-                                                           f'{product.name}, but {quantity_int} was given. Try again'},
+            if quantity_int > product.count:
+                return Response({'code': '400', 'message': f'we have only {product.count} items of '
+                                                           f'{product.title}, but {quantity_int} was given. Try again'},
                                 status=status.HTTP_400_BAD_REQUEST)
             order_item, created = OrderItem.objects.get_or_create(order=order, product=product)
             order_item.quantity += quantity_int
             order_item.save()
-
-
-
 
         delete_product_id = request.data.get('delete_product').split(':')[1]
         delete_quantity = request.data.get('quantity_of_product_to_delete')
@@ -395,7 +392,7 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
             order_item = OrderItem.objects.get(product=Product.objects.get(id=delete_product_id), order=order)
             if delete_quantity_int > order_item.quantity:
                 return Response({'code': '400', 'message': f'we have only {order_item.quantity} items of '
-                                                           f'{order_item.product.name}, but '
+                                                           f'{order_item.product.title}, but '
                                                            f'{delete_quantity_int} was given. Try again'},
                                 status=status.HTTP_400_BAD_REQUEST)
             elif delete_quantity_int == order_item.quantity:
@@ -408,14 +405,14 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
 
         city = request.data.get('city')
         promocode = request.data.get('promocode')
-        delivery_adress = request.data.get('delivery_adress')
+        address = request.data.get('address')
         payment_type = request.data.get('payment_type')
         delivery_type = request.data.get('delivery_type')
 
         del_type = DeliveryType.objects.get(name=delivery_type)
 
         order.city = city
-        order.delivery_adress = delivery_adress
+        order.address = address
         order.promocode = promocode
         order.payment_type = payment_type
         order.delivery_type = del_type
@@ -466,7 +463,8 @@ class PaymentView(CreateAPIView):
 
         if paid:
             for item in order.items.all():
-                item.product.amount -= item.quantity
+                item.product.count -= item.quantity
+                item.product.sold_amount += item.quantity
                 item.product.save()
             return Response({'code': '200', 'order': order_id, 'message': 'successfully paid'},
                             status=status.HTTP_200_OK)
@@ -509,10 +507,10 @@ class ProfileView(ListCreateAPIView):
                 profile = Profile.objects.create(user=user, phone=phone)
             profile.save()
 
-            img = request.FILES.get('avatar')
+            src = request.FILES.get('avatar')
             alt = request.data.get('alt')
 
-            image = Image.objects.create(img=img, alt=alt, object_id=profile.id,
+            image = Image.objects.create(src=src, alt=alt, object_id=profile.id,
                                          content_type=ContentType.objects.get_for_model(Profile))
             image.save()
             profile.image = image
@@ -591,7 +589,7 @@ class UpdateProfileAvatarView(UpdateAPIView):
             avatar = request.FILES.get('avatar')
             alt = serializer.data.get("alt")
 
-            image = Image.objects.create(img=avatar, alt=alt, object_id=profile.id,
+            image = Image.objects.create(src=avatar, alt=alt, object_id=profile.id,
                                          content_type=ContentType.objects.get_for_model(Profile))
             image.save()
             profile.image = image
@@ -651,6 +649,8 @@ class ReviewView(ListCreateAPIView):
         text = request.data.get('text')
 
         review = Review.objects.create(product=product, author=user, text=text, rate=rate)
+        product.reviews += 1
+        product.save()
 
         serializer = ReviewSerializer(review)
         return Response(serializer.data)
@@ -681,9 +681,9 @@ class ReviewView(ListCreateAPIView):
 #
 #         user = request.user
 #         if not Profile.objects.get(user=user):
-#             img = request.FILES.get('img')
+#             src = request.FILES.get('src')
 #             alt = request.data.get('alt')
-#             image = Image.objects.create(img=img, alt=alt)
+#             image = Image.objects.create(src=src, alt=alt)
 #             image.save()
 #             phone = request.data.get('phone')
 #

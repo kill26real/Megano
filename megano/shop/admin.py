@@ -25,7 +25,7 @@ class OrderAdmin(admin.ModelAdmin):
         OrderItemInLine,
     ]
     list_display = 'id', 'user', 'created_at', 'delivery_type', 'payment_type', \
-        'total_cost', 'status', 'city', 'delivery_adress', 'promocode'
+        'total_cost', 'status', 'city', 'address', 'promocode'
 
     def get_queryset(self, request):
         return Order.objects.select_related('user')
@@ -110,8 +110,8 @@ class ProductAdmin(GenericAdminModelAdmin):
         ProductReviewInLine,
         ImageInline,
     ]
-    list_display = 'id', 'category', 'subcategory', 'price', 'amount', 'sold_amount', 'created_at', 'name', 'description',  \
-        'limited', 'free_delivery', 'reviews_count', 'rating', 'slug'
+    list_display = 'id', 'category', 'subcategory', 'price', 'count', 'sold_amount', 'date', 'title', 'description',  \
+       'full_description', 'limited', 'free_delivery', 'reviews', 'rating', 'slug'
 
     def get_queryset(self, request):
         return Product.objects.prefetch_related('images', 'specifications', 'tags')
@@ -173,7 +173,7 @@ class SubcategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = 'author', 'text', 'product', 'published_at', 'rate'
+    list_display = 'author', 'text', 'product', 'date', 'rate'
 
     def get_queryset(self, request):
         return Review.objects.select_related('author').select_related('product')
@@ -183,7 +183,7 @@ class ReviewAdmin(admin.ModelAdmin):
 
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
-    list_display = 'alt', 'img'
+    list_display = 'alt', 'src'
 
 
 
@@ -214,7 +214,7 @@ class SpecificationAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = 'id', 'old_price', 'new_price', 'date_from', 'date_to', 'product',
+    list_display = 'id', 'price', 'sale_price', 'date_from', 'date_to', 'product',
 
     def get_queryset(self, request):
         return Sale.objects.select_related('product')
