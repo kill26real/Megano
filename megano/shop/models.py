@@ -118,7 +118,7 @@ class Product(models.Model):
     images = GenericRelation(Image, related_query_name='product')
     tags = models.ManyToManyField(Tag, related_query_name='products')
     specifications = models.ManyToManyField(Specification, related_name='products')
-    reviews = models.IntegerField(default=0)
+    # reviews = models.IntegerField(default=0)
     slug = models.SlugField(max_length=40)
 
     def __str__(self):
@@ -130,6 +130,10 @@ class Product(models.Model):
         for tag in self.tags.all():
             tag_list.append(tag.name)
         return tag_list
+
+    @property
+    def reviews(self):
+        return len(self.comments.all())
 
     @property
     def product_category(self):
@@ -255,7 +259,7 @@ class Order(models.Model):
             for pay in self.payment.all():
                 if pay.paid:
                     return 'Paid'
-            return 'Payment failed'
+            return 'Last payment failed'
         return 'Created'
 
     def __str__(self):

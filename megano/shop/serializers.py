@@ -67,11 +67,22 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    # author = UserSerializer(read_only=True)
+    author = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
 
     class Meta:
         model = Review
-        fields = ['author', 'text', 'rate', 'date']
+        fields = ['author', 'email', 'text', 'rate', 'date']
+
+
+    def get_author(self, obj):
+        return obj.author.username
+
+    def get_email(self, obj):
+        return obj.author.email
+
+
 
 
 class ProductSubcategorySerializer(serializers.ModelSerializer):
@@ -93,11 +104,12 @@ class SpecificationSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    comments = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
     images = ImageSerializer(many=True, read_only=True)
     # product_tags = serializers.ReadOnlyField()
     specifications = SpecificationSerializer(many=True, read_only=True)
     date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    tags = TagSerializer(read_only=True, many=True)
     # product_category = serializers.ReadOnlyField()
     # product_subcategory = serializers.ReadOnlyField()
 
@@ -105,10 +117,10 @@ class ProductSerializer(serializers.ModelSerializer):
     # category = ProductSubcategorySerializer(read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'title', 'price', 'category', 'count', 'date',
-                  'description', 'full_description', 'free_delivery', 'images', 'tags', 'comments', 'specifications', 'rating']
+        fields = ['id', 'category', 'price', 'count', 'date', 'title', 'description', 'full_description',
+                  'free_delivery', 'images', 'tags', 'reviews', 'specifications', 'rating']
 
-    def get_comments(self, obj):
+    def get_reviews(self, obj):
         queryset = Review.objects.filter(product=obj)
         return [ReviewSerializer(q).data for q in queryset]
 
@@ -220,8 +232,15 @@ class UpdateOrderSerializer(serializers.ModelSerializer):
 
 
 
-class PaymentSerializer(serializers.ModelSerializer):
+class CreatePaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ['number', 'code', 'order']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    class Meta:
+        model = Payment
+        fields = ['number', 'code', 'order', 'created_at', 'paid']
 

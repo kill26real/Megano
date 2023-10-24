@@ -87,10 +87,20 @@ class ImageSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     avatar = ImageSerializer(many=True)
-    user = UserSerializer(read_only=True)
+
+    username = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
-        fields = ['user', 'phone', 'avatar']
+        fields = ['username', 'email', 'phone', 'avatar']
+
+
+    def get_username(self, obj):
+        return obj.user.username
+
+    def get_email(self, obj):
+        return obj.user.email
 
 
 class CreateProfileSerializer(serializers.ModelSerializer):

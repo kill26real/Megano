@@ -36,7 +36,7 @@ from user.serializers import UserSerializer, UserLoginSerializer, AuthUserSerial
 from user.models import Profile, Basket, BasketItem
 from shop.serializers import ProductShortSerializer, ProductSerializer, CategorySerializer, OrderSerializer, \
     ReviewSerializer, SaleSerializer, PaymentSerializer, OrderItemSerializer, CreateOrderSerializer, TagSerializer, \
-    UpdateOrderSerializer
+    UpdateOrderSerializer, CreatePaymentSerializer
 from shop.models import Product, Order, Image, Specification, Category, Review, Sale, Subcategory, OrderItem, Payment, \
     Tag
 from manage.models import DeliveryType
@@ -241,7 +241,7 @@ class BasketDetail(UpdateModelMixin, ListModelMixin, GenericAPIView):
         return self.list(request, *args, **kwargs)
 
     def patch(self, request):
-        user_id = request.user.id
+        user = request.user
         product_id = request.data.get('product_id')[0]
         quantity = int(request.data.get('quantity'))
 
@@ -250,11 +250,12 @@ class BasketDetail(UpdateModelMixin, ListModelMixin, GenericAPIView):
         except Product.DoesNotExist:
             return Response({'message': 'Product not found'}, status=404)
 
-        basket = Basket.objects.filter(user=user_id).first()
+        # basket = Basket.objects.filter(user=request.user).first()
+        basket = Basket.objects.get(user=user)
 
         try:
             basket_item = BasketItem.objects.get(basket=basket, product=product)
-        except BasketItem.DoesNotExist:
+        except ObjectDoesNotExist:
             return Response({'message': 'Product not in basket'}, status=404)
 
         if basket_item.quantity == quantity:
@@ -436,22 +437,26 @@ class PaymentView(CreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "POST":
-            return CreateOrderSerializer
-        return OrderSerializer
+            return CreatePaymentSerializer
+        return PaymentSerializer
 
     def post(self, request, *args, **kwargs):
         user = request.user
         order_id = request.data.get('order')
         number = request.data.get('number')
         code = request.data.get('code')
-
+        print(order_id)
         order = Order.objects.get(id=order_id)
+        print(order)
 
         if order.user.id != user.id:
             return Response({'code': '400', 'message': 'order is not yours'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if Payment.objects.get(order=order, paid=True):
+        try:
+            Payment.objects.get(order=order, paid=True)
             return Response({'code': '400', 'message': 'order is alredy paid'}, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            pass
 
         if int(number) % int(code) == 0:
             paid = True
@@ -461,12 +466,14 @@ class PaymentView(CreateAPIView):
         payment = Payment.objects.create(order=order, user=user, number=number, code=code, paid=paid)
         payment.save()
 
+        serializer = PaymentSerializer(payment)
+
         if paid:
             for item in order.items.all():
                 item.product.count -= item.quantity
                 item.product.sold_amount += item.quantity
                 item.product.save()
-            return Response({'code': '200', 'order': order_id, 'message': 'successfully paid'},
+            return Response({'code': '200', 'order': order_id, 'message': 'successfully paid', 'data': serializer.data},
                             status=status.HTTP_200_OK)
         else:
             return Response({'code': '400', 'message': 'payment is failed'},
@@ -649,8 +656,7 @@ class ReviewView(ListCreateAPIView):
         text = request.data.get('text')
 
         review = Review.objects.create(product=product, author=user, text=text, rate=rate)
-        product.reviews += 1
-        product.save()
+        # product.save()
 
         serializer = ReviewSerializer(review)
         return Response(serializer.data)
