@@ -13,6 +13,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
+from rest_framework.utils import json
 from rest_framework.views import APIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, \
     DestroyModelMixin
@@ -47,6 +48,7 @@ from .filters import CatalogFilter
 
 
 class LoginUserView(GenericAPIView):
+    """Представление для входа в систему"""
     permission_classes = (AllowAny,)
     serializer_class = UserLoginSerializer
 
@@ -66,6 +68,7 @@ class LoginUserView(GenericAPIView):
 
 
 class RegisterView(CreateAPIView):
+    """Представление для регистрации"""
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
@@ -121,6 +124,7 @@ class RegisterView(CreateAPIView):
 
 
 class LogoutView(APIView):
+    """Представление для выхода из системы"""
     permission_classes = (IsAuthenticated,)
     authentication_classes = [SessionAuthentication]
 
@@ -137,7 +141,7 @@ class LogoutView(APIView):
 
 
 class CategoryList(ListModelMixin, GenericAPIView):
-    """Представление для получения списка категорий с подкатегориями"""
+    """Представление для получения списка категорий"""
     permission_classes = (AllowAny,)
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
@@ -333,7 +337,7 @@ class OrdersList(ListCreateAPIView):
 
 # @extend_schema(methods=['PUT'], exclude=True)
 class OrderDetailsView(RetrieveUpdateDestroyAPIView):
-    """Представление для получения, подтверждения и удаления заказа"""
+    """Представление для получения, изменения и удаления заказа"""
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated, IsOwner]
     authentication_classes = [SessionAuthentication]
@@ -429,7 +433,7 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
 
 
 class PaymentView(CreateAPIView):
-    """Представление для оплаты собственного заказа"""
+    """Представление для оплаты заказа"""
     serializer_class = PaymentSerializer
     queryset = Payment.objects.all()
     permission_classes = [IsAuthenticated]
@@ -481,7 +485,7 @@ class PaymentView(CreateAPIView):
 
 
 class ProfileView(ListCreateAPIView):
-    """Представление для получения и создания заказов"""
+    """Представление для получения и создания профиля"""
     queryset = Profile.objects.all()
     permission_classes = (IsAuthenticated,)
     authentication_classes = [SessionAuthentication]
@@ -569,6 +573,7 @@ class ChangePasswordView(UpdateAPIView):
 
 
 class UpdateProfileAvatarView(UpdateAPIView):
+    """Представление для обновления аватара в профиле"""
     queryset = Profile.objects.all()
     serializer_class = ChangeAvatarSerializer
     permission_classes = (IsAuthenticated, IsOwner)
@@ -606,6 +611,7 @@ class UpdateProfileAvatarView(UpdateAPIView):
 
 
 class TagListView(ListAPIView):
+    """Представление для получения списка тэгов"""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
@@ -615,13 +621,14 @@ class TagListView(ListAPIView):
 
 
 class ProductDetailsView(RetrieveAPIView):
+    """Представление для получения детального описания продукта"""
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = (AllowAny,)
 
 
 class ReviewView(ListCreateAPIView):
-    """Представление для получения и создания заказов"""
+    """Представление для получения и создания отзывов"""
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
