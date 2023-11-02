@@ -428,8 +428,8 @@ class OrderDetailsView(RetrieveUpdateDestroyAPIView):
         return Response(serializer.data)
 
 
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(self, request, *args, **kwargs)
+    # def delete(self, request, *args, **kwargs):
+    #     return self.destroy(self, request, *args, **kwargs)
 
 
 class PaymentView(CreateAPIView):
@@ -627,7 +627,7 @@ class ProductDetailsView(RetrieveAPIView):
     permission_classes = (AllowAny,)
 
 
-class ReviewView(ListCreateAPIView):
+class ReviewView(CreateAPIView):
     """Представление для получения и создания отзывов"""
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -643,8 +643,8 @@ class ReviewView(ListCreateAPIView):
         context.update({"product_id": self.kwargs['pk']})
         return context
 
-    def get(self, request, *args, **kwargs):
-        return self.list(self, request, *args, **kwargs)
+    # def get(self, request, *args, **kwargs):
+    #     return self.list(self, request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         rate = request.data.get('rate')
