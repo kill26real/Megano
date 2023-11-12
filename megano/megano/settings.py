@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'frontend.apps.FrontendConfig',
     'shop.apps.ShopConfig',
     'user.apps.UserConfig',
-    'api.apps.ApiConfig',
+    # 'api.apps.ApiConfig',
     'manage.apps.ManageConfig',
 ]
 
@@ -99,19 +99,37 @@ DATABASES = {
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    # },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'OPTIONS': {
+            'min_length': 1,
+        }
     },
 ]
+
+# AUTHENTICATION_BACKENDS = [
+#    'django.contrib.auth.backends.ModelBackend',
+# ]
+
+# LOGIN_URL = 'sign-in/'
+
+LOGIN_REDIRECT_URL = 'profile'
+LOGOUT_REDIRECT_URL = '/'
+
+# APPEND_SLASH = False
+
 
 
 # Internationalization
@@ -185,11 +203,3 @@ LOGGING = {
     },
 }
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 1,
-        }
-    },
-]

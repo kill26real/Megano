@@ -1,4 +1,4 @@
-{% extends "user/base.html" %}
+{% extends "frontend/base.html" %}
 {% load static %}
 
 {% block content %}
@@ -9,7 +9,7 @@
           <h1 class="Middle-title">Личный кабинет
           </h1>
           <ul class="breadcrumbs Middle-breadcrumbs">
-            <li class="breadcrumbs-item"><a href="/megano/frontend/static">Home</a>
+            <li class="breadcrumbs-item"><a href="/">Home</a>
             </li>
             <li class="breadcrumbs-item breadcrumbs-item_current"><span>Личный кабинет</span>
             </li>
@@ -28,7 +28,7 @@
             <div class="Section-columnContent">
               <div class="NavigateProfile">
                 <ul class="menu menu_vt">
-                  <li class="menu-item"><a class="menu-link" href="user:profile">Профиль</a>
+                  <li class="menu-item"><a class="menu-link" href="/profile">Профиль</a>
                   </li>
                   <li class="menu-item"><a class="menu-link" href="/history-order">История заказов</a>
                   </li>
@@ -58,9 +58,9 @@
                   <div class="Order-personal">
                     <div v-for="order in orders" class="row">
                       <div class="row-block">
-                        <a class="Order-title" href="../../../frontend/templates/frontend/oneorder.html">Заказ&#32;<span class="Order-numberOrder">№${order.id}$</span>&#32;от&#32;<span class="Order-dateOrder">${order.createdAt}$</span></a>
+                        <a class="Order-title" href="oneorder.html">Заказ&#32;<span class="Order-numberOrder">№${order.id}$</span>&#32;от&#32;<span class="Order-dateOrder">${order.createdAt}$</span></a>
                         <div class="Account-editLink">
-                          <a href="../../../frontend/templates/frontend/historyorder.html">История заказов</a>
+                          <a href="historyorder.html">История заказов</a>
                         </div>
                       </div>
                       <div class="row-block">

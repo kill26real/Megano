@@ -53,7 +53,7 @@ class LoginUserView(GenericAPIView):
     serializer_class = UserLoginSerializer
 
     def post(self, request, *args, **kwargs):
-        username = request.data.get("username")
+        username = request.data.get("login")
         password = request.data.get("password")
         if username is None or password is None:
             return Response({'error': 'Please provide both username and password'},
@@ -66,6 +66,26 @@ class LoginUserView(GenericAPIView):
         return Response({'code': '200', 'user': user.username, 'message': 'successfully login'},
                         status=status.HTTP_200_OK)
 
+class NewLoginView(APIView):
+    permission_classes = (AllowAny,)
+    def post(self, request, format=None):
+        data = json.loads(request.body)
+
+        username = data.get('username', None)
+        password = data.get('password', None)
+
+        user = authenticate(username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return Response({'code': '200', 'user': username, 'message': 'successfully login'},
+                            status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status': 'Unauthorized',
+                'message': 'Username/password combination invalid.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
 
 class RegisterView(CreateAPIView):
     """Представление для регистрации"""
@@ -75,36 +95,23 @@ class RegisterView(CreateAPIView):
 
 
     def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        username = data.get("username", None)
+        name = data.get("name", None)
+        password = data.get("password", None)
         user = request.user
-        username = request.data.get("username")
-        email = request.data.get("email")
-        first_name = request.data.get("first_name")
-        last_name = request.data.get("last_name")
-        password = request.data.get("password")
-        password2 = request.data.get("password2")
-        if username is None or password is None:
-            return Response({'error': 'Please provide both username and password'},
-                            status=status.HTTP_400_BAD_REQUEST)
 
         try:
             validate_password(password, user)
         except ValidationError as e:
             Response({'error': f'{e}'},
                      status=status.HTTP_400_BAD_REQUEST)
-
-        if password != password2:
-            return Response({'error': 'Password fields did not match.'},
-                            status=status.HTTP_400_BAD_REQUEST)
         user = User.objects.create(
             username=username,
-            email=email,
-            first_name=first_name,
-            last_name=last_name
+            first_name=name
         )
-
         user.set_password(password)
         user.save()
-
         user = authenticate(username=username, password=password)
         login(request, user)
 
@@ -112,22 +119,10 @@ class RegisterView(CreateAPIView):
                         status=status.HTTP_200_OK)
 
 
-
-
-    # def create(self, request, *args, **kwargs):
-    #     response = super().create(request, *args, **kwargs)
-    #     return Response({
-    #         'status': 200,
-    #         'message': 'User successfully created',
-    #         'data': response.data
-    #     })
-
-
 class LogoutView(APIView):
     """Представление для выхода из системы"""
     permission_classes = (IsAuthenticated,)
     authentication_classes = [SessionAuthentication]
-
 
     def post(self, request, format=None):
         if request.user.is_authenticated:
@@ -147,7 +142,12 @@ class CategoryList(ListModelMixin, GenericAPIView):
     queryset = Category.objects.all()
 
     def get(self, request):
+        data = json.loads(request.body)
+        print(data)
+        categories = data.get('category', None)
+        password = data.get('password', None)
         return self.list(request)
+
 
 
 class ProductsCatalogList(ListModelMixin, GenericAPIView):
@@ -199,7 +199,15 @@ class BannersList(ListModelMixin, GenericAPIView):
     queryset = Product.objects.order_by('sold_amount')[:8]
 
     def get(self, request):
+        # data = json.loads(request.body)
+        # print(data)
+        # username = data.get('username', None)
+        # password = data.get('password', None)
         return self.list(request)
+
+    # def get(self, request):
+    #     banners = Product.objects.order_by('sold_amount')[:8]
+    #     return banners
 
 
 class BasketDetail(UpdateModelMixin, ListModelMixin, GenericAPIView):
@@ -225,6 +233,10 @@ class BasketDetail(UpdateModelMixin, ListModelMixin, GenericAPIView):
         return BasketSerializer
 
     def post(self, request):
+        data = json.loads(request.body)
+
+        username = data.get('username', None)
+        password = data.get('password', None)
         user_id = request.user.id
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity')

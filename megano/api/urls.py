@@ -6,6 +6,7 @@ from rest_framework_nested import routers as rt
 from .views import (
     LogoutView,
     LoginUserView,
+    NewLoginView,
     RegisterView,
     CategoryList,
     ProductsCatalogList,
@@ -23,18 +24,15 @@ from .views import (
     ProductDetailsView,
     ReviewView,
     TagListView,
-
 )
-
-# router = routers.DefaultRouter()
-# router.register(r'profile', ProfileViewSet, basename='profile')
 
 app_name = 'api'
 
 urlpatterns = [
     path('', include('rest_framework.urls')),
-    path('sign-in', LoginUserView.as_view(), name='sign-in'),
-    path('sign-up', RegisterView.as_view(), name='sign-up'),
+    # path('sign-in', LoginUserView.as_view(), name='sign-in'),
+    path('sign-in', NewLoginView.as_view(), name='sign-in'),
+    path('sign-up/', RegisterView.as_view(), name='sign-up'),
     path('sign-out', LogoutView.as_view(), name='sign-out'),
     path('categories', CategoryList.as_view(), name='categories-list'),
     path('catalog', ProductsCatalogList.as_view(), name="catalog"),

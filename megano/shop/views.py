@@ -1,4 +1,6 @@
 from django.shortcuts import render
+from rest_framework.utils import json
+
 from .models import Order, Product, Review, Category, Image, Specification, Sale, Subcategory
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
@@ -7,27 +9,31 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class ProductsListView(ListView):
-    template_name = 'shop/catalog.html'
+    template_name = 'frontend/catalog.html'
     queryset = Product.objects.all()
     context_object_name = 'catalogCards'
 
 
 class ProductsIndexView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
+        data = json.loads(request.body)
+
+        username = data.get('username', None)
+        password = data.get('password', None)
         popular = Product.objects.order_by('sold_amount')[:8]
         limited = Product.objects.filter(limited=True)[:15]
         context = {
             'popularCards': popular,
             'limitedCards': limited,
+            'banners':popular,
         }
-        return render(request, 'shop/index.html', context=context)
+        return render(request, 'frontend/index.html', context=context)
 
 
 
 class ProductsDetailsView(DetailView):
-    template_name = 'shop/product.html'
+    template_name = 'frontend/product.html'
     model = Product
-    slug_field = Product.name
     context_object_name = 'product'
 
     def get_context_data(self, **kwargs):
