@@ -75,21 +75,21 @@ class Category(models.Model):
     def __str__(self):
         return self.title
 
-class Subcategory(models.Model):
-    class Meta:
-        ordering = ['title']
-        verbose_name = "subcategory"
-        verbose_name_plural = "subcategories"
-
-    id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=40)
-    image = GenericRelation(Image, related_name='image')
-    archived = models.BooleanField(default=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
-    slug = models.SlugField(max_length=40)
-
-    def __str__(self):
-        return self.title
+# class Subcategory(models.Model):
+#     class Meta:
+#         ordering = ['title']
+#         verbose_name = "subcategory"
+#         verbose_name_plural = "subcategories"
+#
+#     id = models.AutoField(primary_key=True)
+#     title = models.CharField(max_length=40)
+#     image = GenericRelation(Image, related_name='image')
+#     archived = models.BooleanField(default=True)
+#     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
+#     slug = models.SlugField(max_length=40)
+#
+#     def __str__(self):
+#         return self.title
 
 
 
