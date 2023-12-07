@@ -3,7 +3,8 @@ from django.contrib.contenttypes import admin as cadmin
 from django.http import HttpRequest, HttpResponse
 from genericadmin.admin import GenericAdminModelAdmin, TabularInlineWithGeneric, StackedInlineWithGeneric
 from django.db.models import QuerySet
-from .models import Product, Order, Review, Category, Subcategory, Image, Tag, Specification, Sale, Payment, OrderItem
+from .models import Product, Order, Review, Category, Image, Tag, Specification, Payment, OrderItem
+from mptt.admin import MPTTModelAdmin
 
 
 
@@ -110,7 +111,7 @@ class ProductAdmin(GenericAdminModelAdmin):
         ProductReviewInLine,
         ImageInline,
     ]
-    list_display = 'id', 'category', 'subcategory', 'price', 'count', 'sold_amount', 'date', 'title', 'description',  \
+    list_display = 'id', 'category', 'price', 'count', 'sold_amount', 'date', 'title', 'description',  \
        'full_description', 'limited', 'free_delivery', 'reviews', 'rating', 'slug'
 
     def get_queryset(self, request):
@@ -129,46 +130,26 @@ def mark_unarchived(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset
     queryset.update(archived=False)
 
 
-class CategoryProductInline(admin.StackedInline):
-    model = Product
+
+
+# class CategoryProductInline(admin.StackedInline):
+#     model = Product
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(MPTTModelAdmin):
     actions = [
         mark_archived,
         mark_unarchived,
     ]
     inlines = [
-        CategoryProductInline,
+        # CategoryProductInline,
         ImageInline,
     ]
     list_display = 'id', 'title', 'archived', 'slug'
 
     def get_queryset(self, request):
         return Category.objects.prefetch_related('products')
-
-
-
-
-class SubcategoryProductInline(admin.StackedInline):
-    model = Product
-
-
-@admin.register(Subcategory)
-class SubcategoryAdmin(admin.ModelAdmin):
-    actions = [
-        mark_archived,
-        mark_unarchived,
-    ]
-    inlines = [
-        SubcategoryProductInline,
-        ImageInline,
-    ]
-    list_display = 'id', 'title', 'category', 'archived', 'slug'
-
-    def get_queryset(self, request):
-        return Subcategory.objects.select_related('category').prefetch_related('products')
 
 
 @admin.register(Review)
@@ -208,14 +189,4 @@ class SpecificationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return Specification.objects.prefetch_related('products')
-
-
-
-
-@admin.register(Sale)
-class SaleAdmin(admin.ModelAdmin):
-    list_display = 'id', 'price', 'sale_price', 'date_from', 'date_to', 'product',
-
-    def get_queryset(self, request):
-        return Sale.objects.select_related('product')
 

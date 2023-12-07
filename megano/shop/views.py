@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.utils import json
 
-from .models import Order, Product, Review, Category, Image, Specification, Sale, Subcategory
+from .models import Order, Product, Review, Category, Image, Specification, Sale
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
 

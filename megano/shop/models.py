@@ -19,13 +19,7 @@ from manage.models import DeliveryType
 #     elif instance.content_type.model == 'Category':
 #         category = Category.objects.get(id=instance.oject_id)
 #         name_object = category.title
-#         return f'/files/category/{name_object}/{filename}'
-#
-#     elif instance.content_type.model == 'Subcategory':
-#         category = Subcategory.objects.get(id=instance.oject_id)
-#         name_object = category.title
-#         return f'/files/subcategory/{name_object}/{filename}'
-#
+#         return f'/files/category/{name_object}/{filename}'#
 #     elif instance.content_type.model == 'Profile':
 #         profile = Product.objects.get(id=instance.oject_id)
 #         name_object = profile.name
@@ -37,7 +31,7 @@ class Image(models.Model):
     alt = models.CharField(null=False, blank=True, max_length=100)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
-    #     limit_choices_to={"model__in": ("Product", "Category", "Subcategory", "Profile")},
+    #     limit_choices_to={"model__in": ("Product", "Category", "Profile")},
     #     related_name="images")
     object_id = models.PositiveIntegerField()
     object = GenericForeignKey('content_type', 'object_id')
@@ -76,10 +70,10 @@ class Category(models.Model):
     image = GenericRelation(Image, related_name='image')
     archived = models.BooleanField(default=True)
     slug = models.SlugField(max_length=40)
+    # parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
 
     def __str__(self):
         return self.title
-
 
 class Subcategory(models.Model):
     class Meta:
@@ -98,6 +92,7 @@ class Subcategory(models.Model):
         return self.title
 
 
+
 class Product(models.Model):
     class Meta:
         ordering = ['title', 'price']
@@ -105,7 +100,6 @@ class Product(models.Model):
 
     id = models.AutoField(primary_key=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.PROTECT, related_name='products')
     price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
     count = models.IntegerField(default=0)
     date = models.DateTimeField(auto_now_add=True)
@@ -118,8 +112,10 @@ class Product(models.Model):
     images = GenericRelation(Image, related_query_name='product')
     tags = models.ManyToManyField(Tag, related_query_name='products')
     specifications = models.ManyToManyField(Specification, related_name='products')
-    # reviews = models.IntegerField(default=0)
     slug = models.SlugField(max_length=40)
+    sale_price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
+    date_from = models.DateTimeField(default=datetime.datetime.now, blank=True)
+    date_to = models.DateTimeField(default=datetime.datetime.now, blank=True)
 
     def __str__(self):
         return self.title
@@ -139,9 +135,6 @@ class Product(models.Model):
     def product_category(self):
         return f'{self.category.title}, id: {self.category.id}'
 
-    @property
-    def product_subcategory(self):
-        return f'{self.subcategory.title}, id: {self.category.id}'
 
     @property
     def rating(self):
@@ -175,18 +168,6 @@ class Review(models.Model):
 
     def __str__(self):
         return f'author: {self.author.username}, text: {self.text[:10]}...'
-
-
-class Sale(models.Model):
-    id = models.AutoField(primary_key=True)
-    price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
-    sale_price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
-    date_from = models.DateTimeField(default=datetime.datetime.now, blank=True)
-    date_to = models.DateTimeField(default=datetime.datetime.now, blank=True)
-    product = models.OneToOneField(Product, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'old: {self.old_price}, new: {self.new_price}, product:{self.product}'
 
 
 class Order(models.Model):
@@ -277,7 +258,7 @@ class OrderItem(models.Model):
         return self.product.price * self.quantity
 
     def __str__(self):
-        return f'{self.product.name} - {self.quantity}: {self.sum}'
+        return f'{self.product.title} - {self.quantity}: {self.sum}'
 
 
 class Payment(models.Model):
@@ -291,21 +272,3 @@ class Payment(models.Model):
     def __str__(self):
         return f'Payment. User:{self.user}, sum: {self.order.total_cost}'
 
-# class Category(MPTTModel):
-#
-#     class Meta:
-#         ordering = ['title']
-#         verbose_name = "category"
-#         verbose_name_plural = "categories"
-#
-#     id = models.AutoField(primary_key=True)
-#     title = models.CharField(max_length=40)
-#     icon = GenericRelation(Image)
-#     products = models.ManyToManyField(Product, related_name='categories')
-#     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
-#     archived = models.BooleanField(default=True)
-#     slug = models.SlugField(max_length=40)
-#
-#
-#     def __str__(self):
-#         return self.title

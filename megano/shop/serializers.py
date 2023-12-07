@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
-from .models import Product, Image, Tag, Category, Order, Specification, Sale, Subcategory, Review, OrderItem, Payment
+from .models import Product, Image, Tag, Category, Order, Specification, Review, OrderItem, Payment
 from django.contrib.auth.models import User
 from user.models import Profile
 from manage.models import DeliveryType
@@ -50,20 +50,12 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
-class SubcategorySerializer(serializers.ModelSerializer):
-    image = ImageSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Subcategory
-        fields = ['id', 'title', 'image']
-
-
 class CategorySerializer(serializers.ModelSerializer):
     image = ImageSerializer(many=True, read_only=True)
-    subcategories = SubcategorySerializer(many=True, read_only=True)
+
     class Meta:
         model = Category
-        fields = ['id', 'title', 'image', 'subcategories']
+        fields = ['id', 'title', 'image', 'parent']
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -81,14 +73,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def get_email(self, obj):
         return obj.author.email
-
-
-
-
-class ProductSubcategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subcategory
-        fields = ['id']
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -111,10 +95,7 @@ class ProductSerializer(serializers.ModelSerializer):
     date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
     tags = TagSerializer(read_only=True, many=True)
     # product_category = serializers.ReadOnlyField()
-    # product_subcategory = serializers.ReadOnlyField()
-
     # category = ProductCategorySerializer(read_only=True)
-    # category = ProductSubcategorySerializer(read_only=True)
     class Meta:
         model = Product
         fields = ['id', 'category', 'price', 'count', 'date', 'title', 'description', 'full_description',
@@ -126,7 +107,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
     def get_category(self, obj):
-        return obj.subcategory.id
+        return obj.category.id
 
 
 class ProductShortSerializer(serializers.ModelSerializer):
@@ -135,31 +116,29 @@ class ProductShortSerializer(serializers.ModelSerializer):
     date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
     category = serializers.SerializerMethodField()
     # product_category = serializers.ReadOnlyField()
-    # product_subcategory = serializers.ReadOnlyField()
     # category = ProductCategorySerializer(read_only=True)
-    # subcategory = ProductSubcategorySerializer(read_only=True)
     class Meta:
         model = Product
         fields = ['id', 'category', 'price', 'count', 'date', 'title',
                   'description', 'free_delivery', 'images', 'tags', 'reviews', 'rating']
 
     def get_category(self, obj):
-        return obj.subcategory.id
+        return obj.category.id
 
 
 class SaleSerializer(serializers.ModelSerializer):
-    title = serializers.SerializerMethodField()
-    images = serializers.SerializerMethodField()
+    images = ImageSerializer(many=True, read_only=True)
+
+
     class Meta:
-        model = Sale
+        model = Product
         fields = ['id', 'price', 'sale_price', 'date_from', 'date_to', 'title', 'images']
 
-    def get_title(self, obj):
-        return obj.product.title
 
-    def get_images(self, obj):
-        queryset = obj.product.images.all()
-        return [ImageSerializer(q).data for q in queryset]
+    # def get_images(self, obj):
+    #     queryset = obj.images.all()
+    #     return [ImageSerializer(q).data for q in queryset]
+
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -202,10 +181,10 @@ class CreateOrderSerializer(serializers.ModelSerializer):
     payment_type = serializers.ChoiceField(choices=Order.PAYMENT_TYPE_CHOICES)
     delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
 
-    for product in Product.objects.all():
-        product_title_underline = product.title.replace(" ", "_")
-
-        exec(f"{product_title_underline} = serializers.IntegerField(default=0)")
+    # for product in Product.objects.all():
+    #     product_title_underline = product.title.replace(" ", "_")
+    #
+    #     exec(f"{product_title_underline} = serializers.IntegerField(default=0)")
 
     class Meta:
         model = Order
@@ -218,9 +197,9 @@ class UpdateOrderSerializer(serializers.ModelSerializer):
     promocode = serializers.CharField(max_length=20)
     payment_type = serializers.ChoiceField(choices=Order.PAYMENT_TYPE_CHOICES)
     delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
-    add_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)
+    # add_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)
     quantity_of_product_to_add = serializers.IntegerField(default=0)
-    delete_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)
+    # delete_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)
     quantity_of_product_to_delete = serializers.IntegerField(default=0)
 
 

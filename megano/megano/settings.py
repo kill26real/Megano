@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 
+from rest_framework.pagination import PageNumberPagination
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -129,6 +131,7 @@ LOGIN_REDIRECT_URL = 'profile'
 LOGOUT_REDIRECT_URL = '/'
 
 # APPEND_SLASH = False
+MPTT_ADMIN_LEVEL_INDENT = 20
 
 
 
@@ -156,19 +159,17 @@ STATIC_ROOT = BASE_DIR / 'static'
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 5,
+    # 'DEFAULT_PAGINATION_CLASS': 'python_django-diploma-master.megano.shop.pagination.CatalogPagination',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'rest_framework.authentication.BasicAuthentication',
-        # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-        # 'rest_framework.permissions.IsAdminUser',
     ),
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }

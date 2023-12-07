@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.models import BaseUserManager
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.validators import UniqueValidator
-from shop.models import Product, Image, Tag, Category, Order, Specification, Sale, Subcategory, Review
+from shop.models import Product, Image, Tag, Category, Order, Specification, Review
 from shop.serializers import ProductShortSerializer
 from django.contrib.auth.models import User
 from .models import Profile, Basket, BasketItem
@@ -136,19 +136,19 @@ class ChangeAvatarSerializer(serializers.ModelSerializer):
 class BasketItemSerializer(serializers.ModelSerializer):
     product = ProductShortSerializer(read_only=True)
 
-    def save(self, **kwargs):
-        basket_id = self.context['basket_id']
-        product_id = self.validated_data['product_id']
-        quantity = self.validated_data['quantity']
-        try:
-            basket_item = BasketItem.objects.get(product_id=product_id, basket_id=basket_id)
-            basket_item.quantity += quantity
-            basket_item.save()
-            self.instance = basket_item
-        except:
-            self.instance = BasketItem.objects.create(basket=basket_id, **self.validated_data)
-
-        return self.instance
+    # def save(self, **kwargs):
+    #     basket_id = self.context['basket_id']
+    #     product_id = self.validated_data['product_id']
+    #     quantity = self.validated_data['quantity']
+    #     try:
+    #         basket_item = BasketItem.objects.get(product_id=product_id, basket_id=basket_id)
+    #         basket_item.quantity += quantity
+    #         basket_item.save()
+    #         self.instance = basket_item
+    #     except:
+    #         self.instance = BasketItem.objects.create(basket=basket_id, **self.validated_data)
+    #
+    #     return self.instance
 
     class Meta:
         model = BasketItem
@@ -181,20 +181,24 @@ class DeleteBasketItemSerializer(serializers.ModelSerializer):
 
 class BasketSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
-    total_sum = serializers.SerializerMethodField(method_name='main_total')
+    # total_sum = serializers.SerializerMethodField(method_name='main_total')
 
     class Meta:
         model = Basket
-        fields = ['items', 'total_sum']
-        read_only_fields = ['total_sum']
+        fields = ['items']
+        # read_only_fields = ['total_sum']
+
+    # def get_items(self, obj):
+    #     print('objjjjjjjjjjjjjjjjjjjjj', obj)
+    #     queryset = BasketItem.objects.filter(basket=obj.id)
+    #     return [BasketItemSerializer(q).data for q in queryset]
 
     def get_items(self, obj):
-        queryset = BasketItem.objects.filter(basket=obj)
-        return [BasketItemSerializer(q).data for q in queryset]
+        return ProductShortSerializer(obj, many=True)
 
 
-    def main_total(self, basket: Basket):
-        items = basket.items.all()
-        total = sum([item.quantity * item.product.price for item in items])
-        return total
+    # def main_total(self, basket: Basket):
+    #     items = BasketItem.objects.filter(basket=basket.id)
+    #     total = sum([item.quantity * item.product.price for item in items])
+    #     return total
 
