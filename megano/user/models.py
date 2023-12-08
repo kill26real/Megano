@@ -13,7 +13,7 @@ class Profile(models.Model):
         verbose_name = "profile"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    full_name = models.CharField(max_length=100, blank=True)
+    # full_name = models.CharField(max_length=100, blank=True)
     avatar = GenericRelation(Image, related_name='profile')
     phone = models.CharField(validators=[RegexValidator(
         regex=r'^\+?1?\d{9,15}$',

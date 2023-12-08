@@ -115,6 +115,7 @@ class ProductShortSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
     category = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
     # product_category = serializers.ReadOnlyField()
     # category = ProductCategorySerializer(read_only=True)
     class Meta:
@@ -124,6 +125,9 @@ class ProductShortSerializer(serializers.ModelSerializer):
 
     def get_category(self, obj):
         return obj.category.id
+
+    def get_price(self, obj):
+        return float(obj.price)
 
 
 class SaleSerializer(serializers.ModelSerializer):
@@ -179,7 +183,7 @@ class CreateOrderSerializer(serializers.ModelSerializer):
     address = serializers.CharField(max_length=100)
     promocode = serializers.CharField(max_length=20)
     payment_type = serializers.ChoiceField(choices=Order.PAYMENT_TYPE_CHOICES)
-    delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
+    # delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
 
     # for product in Product.objects.all():
     #     product_title_underline = product.title.replace(" ", "_")
@@ -196,7 +200,7 @@ class UpdateOrderSerializer(serializers.ModelSerializer):
     address = serializers.CharField(max_length=100)
     promocode = serializers.CharField(max_length=20)
     payment_type = serializers.ChoiceField(choices=Order.PAYMENT_TYPE_CHOICES)
-    delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
+    # delivery_type = serializers.ChoiceField(choices=[type.name for type in DeliveryType.objects.all()])
     # add_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)
     quantity_of_product_to_add = serializers.IntegerField(default=0)
     # delete_product = serializers.ChoiceField(choices=[f'{prod.title}, id:{prod.id}' for prod in Product.objects.all().order_by('title')], default=0)

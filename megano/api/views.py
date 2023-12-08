@@ -244,21 +244,38 @@ class CatalogView(APIView):
 
 class ProductsPopularCatalogList(APIView):
     """Представление для получения списка популярных продуктов"""
-
     def get(self, request, *args, **kwargs):
         queryset = Product.objects.order_by('sold_amount')[:8]
         serializer = ProductShortSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class ProductsLimitedCatalogList(ListModelMixin, GenericAPIView):
+class ProductsLimitedCatalogList(APIView):
     """Представление для получения списка лимитированных продуктов"""
-
     def get(self, request, *args, **kwargs):
         queryset = Product.objects.filter(limited=True)[:8]
         serializer = ProductShortSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+# class ProductsPopularCatalogList(ListModelMixin, GenericAPIView):
+#     """Представление для получения списка популярных продуктов"""
+#     serializer_class = ProductShortSerializer
+#     permission_classes = (AllowAny,)
+#     queryset = Product.objects.order_by('sold_amount')[:8]
+#
+#     def get(self, request):
+#         return self.list(request)
+#
+#
+# class ProductsLimitedCatalogList(ListModelMixin, GenericAPIView):
+#     """Представление для получения списка лимитированных продуктов"""
+#     serializer_class = ProductShortSerializer
+#     permission_classes = (AllowAny,)
+#     queryset = Product.objects.filter(limited=True).all()
+#
+#     def get(self, request):
+#         return self.list(request)
 
 
 class SalesList(APIView):

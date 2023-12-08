@@ -70,27 +70,10 @@ class Category(models.Model):
     image = GenericRelation(Image, related_name='image')
     archived = models.BooleanField(default=True)
     slug = models.SlugField(max_length=40)
-    # parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
 
     def __str__(self):
         return self.title
-
-# class Subcategory(models.Model):
-#     class Meta:
-#         ordering = ['title']
-#         verbose_name = "subcategory"
-#         verbose_name_plural = "subcategories"
-#
-#     id = models.AutoField(primary_key=True)
-#     title = models.CharField(max_length=40)
-#     image = GenericRelation(Image, related_name='image')
-#     archived = models.BooleanField(default=True)
-#     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
-#     slug = models.SlugField(max_length=40)
-#
-#     def __str__(self):
-#         return self.title
-
 
 
 class Product(models.Model):
@@ -104,7 +87,7 @@ class Product(models.Model):
     count = models.IntegerField(default=0)
     date = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=40)
-    description = models.TextField(null=False, blank=True)
+    # description = models.TextField(null=False, blank=True)
     full_description = models.TextField(null=False, blank=True)
     sold_amount = models.IntegerField(default=0)
     limited = models.BooleanField(default=0)
@@ -119,6 +102,10 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def description(self):
+        return self.full_description[:40]
 
     @property
     def product_tags(self):

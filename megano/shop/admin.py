@@ -137,7 +137,7 @@ def mark_unarchived(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset
 
 
 @admin.register(Category)
-class CategoryAdmin(MPTTModelAdmin):
+class CategoryAdmin(admin.ModelAdmin):
     actions = [
         mark_archived,
         mark_unarchived,
@@ -146,7 +146,7 @@ class CategoryAdmin(MPTTModelAdmin):
         # CategoryProductInline,
         ImageInline,
     ]
-    list_display = 'id', 'title', 'archived', 'slug'
+    list_display = 'id', 'title', 'archived', 'slug', 'parent'
 
     def get_queryset(self, request):
         return Category.objects.prefetch_related('products')
