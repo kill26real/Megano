@@ -28,6 +28,24 @@
   <script defer src="{% static 'frontend/assets/plg/range/ion.rangeSlider.min.js' %}"></script>
   <script defer src="{% static 'frontend/assets/plg/Slider/slick.min.js' %}"></script>
   <script defer src="{% static 'frontend/assets/js/scripts.js' %}"></script>
+  <style>
+    .hidethis { animation: hideee 0s 3s forwards; }
+
+    @keyframes hideee  { to { visibility: hidden; } }
+
+    .showthis {
+      visibility: hidden;
+      animation: showDiv 3s forwards;
+    }
+    @keyframes showDiv {
+      0%, 99% {
+        visibility: hidden;
+      }
+      100% {
+        visibility: visible;
+      }
+    }
+  </style>
 </head>
 <body class="Site" id="site">
   <header class="Header">

@@ -8,6 +8,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
 from computed_property import ComputedTextField
 from manage.models import DeliveryType
+from urllib.parse import unquote
 
 
 # def get_storage_path(instance, filename):
@@ -26,21 +27,21 @@ from manage.models import DeliveryType
 #         return f'/files/profile/{name_object}/{filename}'
 
 
-class Image(models.Model):
-    src = models.ImageField(upload_to='files/')
-    alt = models.CharField(null=False, blank=True, max_length=100)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
-    #     limit_choices_to={"model__in": ("Product", "Category", "Profile")},
-    #     related_name="images")
-    object_id = models.PositiveIntegerField()
-    object = GenericForeignKey('content_type', 'object_id')
-
-    class Meta:
-        unique_together = ('content_type', 'object_id')
-
-    def __str__(self):
-        return self.alt
+# class Image(models.Model):
+#     src = models.ImageField(upload_to='files/')
+#     alt = models.CharField(null=False, blank=True, max_length=100)
+#     # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+#     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+#                                      limit_choices_to={"model__in": ("Product", "Category", "Profile")},
+#                                      related_name="images")
+#     object_id = models.PositiveIntegerField()
+#     object = GenericForeignKey('content_type', 'object_id')
+#
+#     class Meta:
+#         unique_together = ('content_type', 'object_id')
+#
+#     def __str__(self):
+#         return self.alt
 
 
 class Tag(models.Model):
@@ -59,6 +60,10 @@ class Specification(models.Model):
         return f'name: {self.name}, value: {self.value}'
 
 
+def category_image_directory_path(instance, filename: str) -> str:
+    return f"images/categories/{instance.title}/{filename}"
+
+
 class Category(models.Model):
     class Meta:
         ordering = ['title']
@@ -67,13 +72,19 @@ class Category(models.Model):
 
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=40)
-    image = GenericRelation(Image, related_name='image')
+    # image = GenericRelation(Image, related_name='image')
+    img = models.ImageField(blank=True, upload_to=category_image_directory_path)
     archived = models.BooleanField(default=True)
     slug = models.SlugField(max_length=40)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
 
     def __str__(self):
         return self.title
+
+    @property
+    def image(self):
+        return {'src': self.img.url, 'alt': f"{self.title} image"}
+
 
 
 class Product(models.Model):
@@ -84,15 +95,15 @@ class Product(models.Model):
     id = models.AutoField(primary_key=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
     price = models.DecimalField(default=0, max_digits=9, decimal_places=2)
+    # images = models.ImageField(blank=True, upload_to="product_image_directory_path")
     count = models.IntegerField(default=0)
     date = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=40)
-    # description = models.TextField(null=False, blank=True)
     full_description = models.TextField(null=False, blank=True)
     sold_amount = models.IntegerField(default=0)
     limited = models.BooleanField(default=0)
     free_delivery = models.BooleanField(default=0)
-    images = GenericRelation(Image, related_query_name='product')
+    # images = GenericRelation(Image, related_query_name='product')
     tags = models.ManyToManyField(Tag, related_query_name='products')
     specifications = models.ManyToManyField(Specification, related_name='products')
     slug = models.SlugField(max_length=40)
@@ -102,6 +113,12 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+
+
+    @property
+    def images(self):
+        return [image for image in ProductImage.objects.filter(product=self)]
+
 
     @property
     def description(self):
@@ -138,6 +155,22 @@ class Product(models.Model):
         return total
 
 
+def product_image_directory_path(instance: Product, filename: str) -> str:
+    return f"images/products/{instance.product.title}/{filename}"
+
+
+class ProductImage(models.Model):
+    src = models.ImageField(blank=True, upload_to=product_image_directory_path)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.product.title} image'
+
+    @property
+    def alt(self):
+        return f'{self.product.title} image'
+
+
 class Review(models.Model):
     class Meta:
         ordering = ['-date']
@@ -161,73 +194,37 @@ class Order(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-    PAYMENT_TYPE_CHOICES = (
-        ('V', 'Visa'),
-        ('MC', 'MasterCard'),
-        ('PP', 'PayPal'),
-        ('AE', 'AmericanExpress'),
-        ('E', 'Electron'),
-        ('M', 'Maestro'),
-        ('D', 'Delta'),
-        ('C', 'Cash'),
-        ('QR', 'QR-Code'),
-        ('O', 'Online'),
-    )
-
     id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    delivery_type = models.ForeignKey(DeliveryType, on_delete=models.PROTECT, related_name='orders')
-    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
+    delivery = models.ForeignKey(DeliveryType, on_delete=models.PROTECT, related_name='orders')
+    payment_type = models.CharField(max_length=20, blank=True)
     city = models.CharField(max_length=40, blank=True)
     address = models.CharField(max_length=100, blank=True)
-    promocode = models.CharField(max_length=20, null=False, blank=True)
+    full_name = models.CharField(max_length=40, blank=True)
+    email = models.CharField(max_length=40, blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    payment_error = models.CharField(max_length=50, null=True, blank=True)
 
-    @property
-    def delivery_price(self):
-        total = 0
-        items = self.items.all()
-        sums = [item.sum for item in items]
-        for su in sums:
-            total += su
-        if self.delivery_type.name == 'Express' or total < self.delivery_type.free_delivery:
-            return self.delivery_type.price
-        return 0
 
     @property
     def total_cost(self):
         total = 0
         items = self.items.all()
-        sums = [item.sum for item in items]
-        for su in sums:
-            total += su
-        return total + self.delivery_price
+        for item in items:
+            total += item.sum
+        return total
 
-    @property
-    def delivery(self):
-        return self.delivery_type.name
-
-    @property
-    def username(self):
-        return self.user.username
-
-    @property
-    def email(self):
-        return self.user.email
-
-    @property
-    def phone(self):
-        if self.user.profile:
-            return self.user.profile.phone
-        return 'no phone'
 
     @property
     def status(self):
+        if self.payment_type == 'someone':
+            return 'Paid'
         if self.payment:
             for pay in self.payment.all():
                 if pay.paid:
                     return 'Paid'
-            return 'Last payment failed'
+            return 'Payment failed'
         return 'Created'
 
     def __str__(self):
@@ -245,7 +242,7 @@ class OrderItem(models.Model):
         return self.product.price * self.quantity
 
     def __str__(self):
-        return f'{self.product.title} - {self.quantity}: {self.sum}'
+        return f'OrderItem: {self.product.title} - {self.quantity}: {self.sum}'
 
 
 class Payment(models.Model):

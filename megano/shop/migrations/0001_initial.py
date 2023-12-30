@@ -56,7 +56,6 @@ class Migration(migrations.Migration):
                 ('count', models.IntegerField(default=0)),
                 ('date', models.DateTimeField(auto_now_add=True)),
                 ('title', models.CharField(max_length=40)),
-                ('description', models.TextField(blank=True)),
                 ('full_description', models.TextField(blank=True)),
                 ('sold_amount', models.IntegerField(default=0)),
                 ('limited', models.BooleanField(default=0)),
@@ -110,6 +109,12 @@ class Migration(migrations.Migration):
             model_name='product',
             name='tags',
             field=models.ManyToManyField(related_query_name='products', to='shop.tag'),
+        ),
+        migrations.AddField(
+            model_name='category',
+            name='parent',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    related_name='subcategories', to='shop.category'),
         ),
         migrations.CreateModel(
             name='Payment',

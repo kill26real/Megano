@@ -23,20 +23,21 @@
 
           <!-- Получаем товар по скидке -->
           <div v-for="card in salesCards" class="Card">
-            <a :href="`/product/${card.id}`"><div class="Card-picture" >
-              <img :src="card.images[0].src" :alt="card.images[0].alt"/>
-            </div>
-              <div v-if="card.dateFrom" class="Card-date">
-                <strong class="Card-date-number">${ card.dateFrom }$</strong>
+            <a :href="`/product/${card.id}/`">
+              <div class="Card-picture" >
+                <img :src="card.images[0].src" :alt="card.images[0].alt"/>
               </div>
-              <div v-if="card.dateTo" class="Card-date Card-date_to">
-                <strong class="Card-date-number">${ card.dateTo }$</strong>
+              <div v-if="card.date_from" class="Card-date">
+                <strong class="Card-date-number">${ card.date_from }$</strong>
+              </div>
+              <div v-if="card.date_to" class="Card-date Card-date_to">
+                <strong class="Card-date-number">${ card.date_to }$</strong>
               </div>
               <div class="Card-content">
                 <strong class="Card-title">${ card.title }$</strong>
-                <div class="Card-description"><s><${ card.price }$</s></div>
+                <div class="Card-description"><s>${ card.price }$</s></div>
                 <br>
-                <div class="Card-description">${ card.salePrice }$</div>
+                <div class="Card-description">${ card.sale_price }$</div>
               </div>
             </a>
           </div>

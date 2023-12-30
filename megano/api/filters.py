@@ -11,12 +11,12 @@ from shop.models import Product
 #         }
 
 
-class ProductFilter(Filter):
-    def filter(self, qs, value):
-        if value:
-            return qs.filter(subcategory=value)
-        else:
-            return qs.all()
+# class ProductFilter(Filter):
+#     def filter(self, qs, value):
+#         if value:
+#             return qs.filter(subcategory=value)
+#         else:
+#             return qs.all()
 
 
 
@@ -28,7 +28,7 @@ class ProductFilter(Filter):
 class CatalogFilter(FilterSet):
     min_price = filters.NumberFilter(field_name="price", lookup_expr='gte')
     max_price = filters.NumberFilter(field_name="price", lookup_expr='lte')
-    category = ProductFilter(field_name="category")
+    # category = ProductFilter(field_name="category")
     # category = filters.CharFilter(field_name='relationship__name', lookup_expr='contains')
 
     class Meta:

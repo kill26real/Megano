@@ -3,8 +3,9 @@ from django.contrib.contenttypes import admin as cadmin
 from django.http import HttpRequest, HttpResponse
 from genericadmin.admin import GenericAdminModelAdmin, TabularInlineWithGeneric, StackedInlineWithGeneric
 from django.db.models import QuerySet
-from .models import Product, Order, Review, Category, Image, Tag, Specification, Payment, OrderItem
+from .models import Product, Order, Review, Category, Tag, Specification, Payment, OrderItem, ProductImage
 from mptt.admin import MPTTModelAdmin
+from django.utils.safestring import mark_safe
 
 
 
@@ -25,8 +26,8 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderItemInLine,
     ]
-    list_display = 'id', 'user', 'created_at', 'delivery_type', 'payment_type', \
-        'total_cost', 'status', 'city', 'address', 'promocode'
+    list_display = 'id', 'user', 'created_at', 'delivery', 'payment_type', \
+        'total_cost', 'status', 'city', 'address', 'full_name', 'email', 'phone'
 
     def get_queryset(self, request):
         return Order.objects.select_related('user')
@@ -82,8 +83,8 @@ def unmark_free_delivery(modeladmin: admin.ModelAdmin, request: HttpRequest, que
     queryset.update(free_delivery=False)
 
 
-class ImageInline(cadmin.GenericTabularInline):
-    model = Image
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
 
 
 class ProductTagInline(admin.StackedInline):
@@ -109,14 +110,13 @@ class ProductAdmin(GenericAdminModelAdmin):
         ProductSpecificationInline,
         ProductTagInline,
         ProductReviewInLine,
-        ImageInline,
+        ProductImageInline,
     ]
     list_display = 'id', 'category', 'price', 'count', 'sold_amount', 'date', 'title', 'description',  \
        'full_description', 'limited', 'free_delivery', 'reviews', 'rating', 'slug'
 
     def get_queryset(self, request):
-        return Product.objects.prefetch_related('images', 'specifications', 'tags')
-
+        return Product.objects.prefetch_related('specifications', 'tags')
 
 
 
@@ -142,11 +142,7 @@ class CategoryAdmin(admin.ModelAdmin):
         mark_archived,
         mark_unarchived,
     ]
-    inlines = [
-        # CategoryProductInline,
-        ImageInline,
-    ]
-    list_display = 'id', 'title', 'archived', 'slug', 'parent'
+    list_display = 'id', 'title', 'archived', 'slug', 'parent', 'image'
 
     def get_queryset(self, request):
         return Category.objects.prefetch_related('products')
@@ -162,9 +158,16 @@ class ReviewAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(Image)
-class ImageAdmin(admin.ModelAdmin):
-    list_display = 'alt', 'src'
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = 'src', 'product'
+
+    def image_show(self, obj):
+        if obj.src:
+            return mark_safe("<img src='{}' width='60' />".format(obj.src))
+        return "None"
+
+    image_show.__name__ = "Картинка"
 
 
 

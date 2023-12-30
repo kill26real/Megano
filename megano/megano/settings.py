@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 
-from rest_framework.pagination import PageNumberPagination
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,7 +49,7 @@ INSTALLED_APPS = [
     'frontend.apps.FrontendConfig',
     'shop.apps.ShopConfig',
     'user.apps.UserConfig',
-    # 'api.apps.ApiConfig',
+    'api.apps.ApiConfig',
     'manage.apps.ManageConfig',
 ]
 
@@ -121,18 +120,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# AUTHENTICATION_BACKENDS = [
-#    'django.contrib.auth.backends.ModelBackend',
-# ]
 
-# LOGIN_URL = 'sign-in/'
-
-LOGIN_REDIRECT_URL = 'profile'
-LOGOUT_REDIRECT_URL = '/'
-
-# APPEND_SLASH = False
-MPTT_ADMIN_LEVEL_INDENT = 20
-
+# PAGINATION
+ITEMS_ON_PAGE = 4
 
 
 # Internationalization
@@ -157,22 +147,50 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 STATIC_ROOT = BASE_DIR / 'static'
 
-
 REST_FRAMEWORK = {
-    # 'DEFAULT_PAGINATION_CLASS': 'python_django-diploma-master.megano.shop.pagination.CatalogPagination',
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 5,
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.IsAdminUser',
     ),
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }
+
+
+# REST_FRAMEWORK = {
+#     # 'DEFAULT_RENDERER_CLASSES': [
+#     #         'rest_framework.renderers.JSONRenderer',
+#     # ],
+#     # 'DEFAULT_PARSER_CLASSES': [
+#     #     # 'rest_framework.parsers.JSONParser',
+#     #     'rest_framework.parsers.MultiPartParser',
+#     # ],
+#     # 'DEFAULT_PAGINATION_CLASS': 'python_django-diploma-master.megano.shop.pagination.CatalogPagination',
+#     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+#     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+#     # 'PAGE_SIZE': 10,
+#     'DEFAULT_FILTER_BACKENDS': (
+#         'django_filters.rest_framework.DjangoFilterBackend',
+#     ),
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework.authentication.SessionAuthentication',
+#         # 'rest_framework.authentication.BasicAuthentication',
+#     ],
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAuthenticated',
+#         # 'rest_framework.permissions.AllowAny',
+#     ),
+#     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
+# }
 
 
 # Default primary key field type

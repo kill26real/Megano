@@ -772,6 +772,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   background: #0063d1;
   color: #fff;
   font-size: 22px;
@@ -3973,6 +3974,23 @@ a.Cart-title {
   90%, 100% {
     transform: perspective(136px) rotateY(180deg);
     opacity: 0;
+  }
+}
+
+.hidethis { animation: hideee 0s 3s forwards; }
+
+@keyframes hideee  { to { visibility: hidden; } }
+
+.showthis {
+  visibility: hidden;
+  animation: showDiv 3s forwards;
+}
+@keyframes showDiv {
+  0%, 99% {
+    visibility: hidden;
+  }
+  100% {
+    visibility: visible;
   }
 }
 

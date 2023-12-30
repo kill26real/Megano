@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Profile, Basket, BasketItem
-from shop.models import Order, Product, Category, Image
+from .models import Profile, Basket, BasketItem, ProfileImage
+from shop.models import Order, Product, Category
 from django.contrib.contenttypes import admin as cadmin
 from django.http import HttpRequest, HttpResponse
 from genericadmin.admin import GenericAdminModelAdmin, TabularInlineWithGeneric, StackedInlineWithGeneric
@@ -8,17 +8,20 @@ from django.db.models import QuerySet
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 
+@admin.register(ProfileImage)
+class ProfileImageAdmin(admin.ModelAdmin):
+    list_display = 'src', 'profile'
 
-class ImageInline(cadmin.GenericTabularInline):
-    model = Image
+class ProfileImageInline(admin.TabularInline):
+    model = ProfileImage
 
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
+    list_display = 'user', 'phone', 'full_name'
     inlines = [
-        ImageInline,
+        ProfileImageInline,
     ]
-    list_display = 'user', 'phone'
 
     def get_queryset(self, request):
         return Profile.objects.select_related('user')
