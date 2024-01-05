@@ -26,7 +26,23 @@ SECRET_KEY = 'django-insecure-i^))7s)r@oq#y^pc6s50&-yq=g&7b38@sdr!rs2mub)ffh3jus
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "0.0.0.0",
+    "127.0.0.1"
+]
+
+INTERNAL_IPS = [
+    "127.0.0.1"
+]
+
+if DEBUG:
+    import socket
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS.append("10.0.2.2")
+    INTERNAL_IPS.extend(
+        [ip[: ip.rfind(".")] + ".1" for ip in ips]
+    )
+
 
 
 # Application definition
@@ -38,11 +54,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'rest_framework',
 
     'widget_tweaks',
     'mptt',
-    'computed_property',
+    "drf_spectacular",
     'django_filters',
     'generic_relations',
 
@@ -120,6 +137,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CASHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 
 # PAGINATION
 ITEMS_ON_PAGE = 4
@@ -162,7 +185,15 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
         # 'rest_framework.permissions.IsAdminUser',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Megano project',
+    'DESCRIPTION' : 'Megano site with shop app and custom auth',
+    'VERSION' : '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 

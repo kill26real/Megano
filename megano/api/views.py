@@ -53,15 +53,12 @@ from .filters import CatalogFilter
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.contrib import messages
-
+import uuid
 
 
 class RegisterView(CreateAPIView):
     """Представление для регистрации"""
-    # queryset = User.objects.all()
     permission_classes = (AllowAny,)
-    # serializer_class = RegisterSerializer
-
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -70,37 +67,63 @@ class RegisterView(CreateAPIView):
         password = data.get("password", None)
         user = request.user
 
+        basket = None
+        if request.session['anonym']:
+            basket = Basket.objects.get(session_id=request.session['anonym'])
+
         try:
             validate_password(password, user)
         except ValidationError as e:
-            Response({'error': f'{e}'},
-                     status=status.HTTP_400_BAD_REQUEST)
-        user = User.objects.create(
-            username=username,
-            first_name=name
-        )
+            Response(status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create(username=username, first_name=name)
         user.set_password(password)
         user.save()
+
         user = authenticate(username=username, password=password)
         login(request, user)
+
+        if basket:
+            basket.user = user
+            basket.session_id = ''
+            basket.save()
 
         return Response({'code': '200', 'user': user.username, 'message': 'successfully sign up'},
                         status=status.HTTP_200_OK)
 
 
 class MyLoginView(APIView):
+    """Представление для авторизации"""
     authentication_classes = [SessionAuthentication]
     permission_classes = (AllowAny,)
-    # serializer_class = UserLoginSerializer
     def post(self, request, format=None):
         data = json.loads(request.body)
         username = data.get('username', None)
         password = data.get('password', None)
 
+        basket_anonym = None
+        if request.session['anonym']:
+            basket_anonym = Basket.objects.get(session_id=request.session['anonym'])
+
         user = authenticate(username=username, password=password)
 
         if user is not None:
             login(request, user)
+
+            basket = Basket.objects.get(user=user)
+            if basket_anonym:
+                for item in basket_anonym.items.all():
+                    try:
+                        old_item = BasketItem.objects.get(product=item.product, basket=basket)
+                        old_item.quantity += item.quantity
+                        old_item.save()
+
+                    except ObjectDoesNotExist:
+                        with transaction.atomic():
+                            BasketItem.objects.create(product=item.product, quantity=item.quantity, basket=basket)
+
+                basket_anonym.delete()
+
             return Response({'code': '200', 'user': username, 'message': 'successfully login'},
                             status=status.HTTP_200_OK)
         else:
@@ -136,9 +159,8 @@ class CategoryList(APIView):
 
 
 class CatalogView(ListAPIView):
+    """Представление для получения каталога"""
     permission_classes = (AllowAny,)
-    # serializer_class = ProductShortSerializer
-    # ITEMS_ON_PAGE = megano.settings.ITEMS_ON_PAGE
     def get_queryset(self):
         queryset = Product.objects.all()
 
@@ -237,13 +259,13 @@ class ProductsLimitedCatalogList(APIView):
     """Представление для получения списка лимитированных продуктов"""
     permission_classes = (AllowAny,)
     def get(self, request, *args, **kwargs):
-        print('uuuuuuuuuuuuuuuuuuuuu', request.user)
-        queryset = Product.objects.filter(limited=True)[:8]
+        queryset = Product.objects.filter(Q(limited=True) and Q())[:8]
         serializer = ProductShortSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SalesList(APIView):
+    """Представление для получения продуктов со скидкой"""
     permission_classes = (AllowAny,)
     # ITEMS_ON_PAGE = megano.megano.settings.ITEMS_ON_PAGE
     """Представление для получения списка скидок"""
@@ -274,7 +296,7 @@ class BannersList(APIView):
 
 class BasketDetail(APIView):
     """Представление для получения корзины, а также добавления и удаления продуктов"""
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -282,7 +304,16 @@ class BasketDetail(APIView):
         product_id = data.get('id', None)
         quantity = data.get('count', None)
 
-        basket = Basket.objects.get(user=user)
+        if user.is_authenticated:
+            basket = Basket.objects.get(user=user)
+        else:
+            try:
+                basket = Basket.objects.get(session_id=request.session['anonym'])
+            except:
+                request.session['anonym'] = str(uuid.uuid4())
+                basket = Basket.objects.create(session_id=request.session['anonym'])
+
+
         product = Product.objects.get(id=product_id)
         if product.count >= quantity:
             basket_item, created = BasketItem.objects.get_or_create(basket=basket, product=product)
@@ -299,9 +330,16 @@ class BasketDetail(APIView):
 
     def get(self, request: Request):
         user = request.user
-        basket, created = Basket.objects.get_or_create(user=user)
-        queryset = BasketItem.objects.filter(basket=basket.id)
+        if user.is_authenticated:
+            basket, created = Basket.objects.get_or_create(user=user)
+        else:
+            try:
+                basket = Basket.objects.get(session_id=request.session['anonym'])
+            except:
+                request.session['anonym'] = str(uuid.uuid4())
+                basket = Basket.objects.create(session_id=request.session['anonym'])
 
+        queryset = BasketItem.objects.filter(basket=basket.id)
         products = Product.objects.filter(basket_items__in=queryset)
         if products:
             serializer = ProductShortBasketSerializer(products, context={"basket": basket},  many=True)
@@ -316,8 +354,17 @@ class BasketDetail(APIView):
         product_id = data.get('id', None)
         quantity = data.get('count', None)
 
+        if user.is_authenticated:
+            basket = Basket.objects.get(user=user)
+        else:
+            try:
+                basket = Basket.objects.get(session_id=request.session['anonym'])
+            except:
+                request.session['anonym'] = str(uuid.uuid4())
+                basket = Basket.objects.create(session_id=request.session['anonym'])
+
         product = Product.objects.get(id=product_id)
-        basket = Basket.objects.get(user=user)
+
         try:
             basket_item = BasketItem.objects.get(basket=basket, product=product)
         except ObjectDoesNotExist:
@@ -343,8 +390,7 @@ class BasketDetail(APIView):
 
 class OrdersList(APIView):
     """Представление для получения и создания заказов"""
-    permission_classes = (IsAuthenticated,)
-    # permission_classes = (IsAuthenticated, IsOwner)
+    permission_classes = (AllowAny,)
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -358,16 +404,16 @@ class OrdersList(APIView):
 
         del_type = DeliveryType.objects.get(name='Regular')
 
-        order = Order.objects.create(user=user, delivery=del_type)
-        order.save()
+        with transaction.atomic():
+            order = Order.objects.create(user=user, delivery=del_type)
 
         for prod in data:
             id = prod['id']
             product = Product.objects.get(id=id)
             quantity = prod['count']
 
-            order_item = OrderItem.objects.create(order=order, product=product, quantity=quantity)
-            order_item.save()
+            with transaction.atomic():
+                order_item = OrderItem.objects.create(order=order, product=product, quantity=quantity)
 
         basket = Basket.objects.get(user=user.id)
         for item in basket.items.all():
@@ -377,8 +423,8 @@ class OrdersList(APIView):
 
 
 class OrderDetailsView(APIView):
-    """Представление для получения, изменения и удаления заказа"""
-    permission_classes = [IsAuthenticated, IsOwner]
+    """Представление для получения и изменения заказа"""
+    permission_classes = (AllowAny,)
 
     def get(self, request, *args, **kwargs):
         user_id = request.user.id
@@ -390,19 +436,16 @@ class OrderDetailsView(APIView):
 
         serializer = OrderSerializer(order)
 
-        # print('oneorder', serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        # print('data order post', data)
         user = request.user
 
         city = data.get('city', None)
         address = data.get('address', None)
         delivery_type = data.get('deliveryType', None)
         payment_type = data.get('paymentType', None)
-        # products = data.get('products', None)
         full_name = data.get('fullName', None)
         email = data.get('email', None)
         phone = data.get('phone', None)
@@ -485,14 +528,13 @@ class PaymentView(APIView):
         if int(number) % int(code) == 0 and not error: paid = True
         else: paid = False
 
-        payment = Payment.objects.create(order=order, user=user, number=number, code=code, paid=paid)
-        payment.save()
+        with transaction.atomic():
+            payment = Payment.objects.create(order=order, user=user, number=number, code=code, paid=paid)
 
         if error != '':
             order.payment_error = error
             order.save()
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
 
         if paid:
             for item in order.items.all():
@@ -524,13 +566,6 @@ class ProfileDetail(APIView):
         profile.full_name = full_name
         profile.phone = phone
         profile.save()
-
-        # try:
-        #     src = request.FILES['avatar']
-        #     avatar = ProfileImage.objects.create(src=src, profile=profile)
-        #     avatar.save()
-        # except KeyError:
-        #     pass
 
         user.email = email
         user.save()
@@ -579,8 +614,8 @@ class UpdateProfileAvatar(APIView):
             except ObjectDoesNotExist:
                 pass
 
-            avatar = ProfileImage.objects.create(src=src, profile=profile)
-            avatar.save()
+            with transaction.atomic():
+                ProfileImage.objects.create(src=src, profile=profile)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -603,6 +638,7 @@ class ProductDetailsView(RetrieveAPIView):
 
 
 class ReviewView(APIView):
+    """Представление для получения и создания отзывов на продукт"""
     permission_classes = (IsAuthenticated,)
     def post(self, request: Request, pk=None, *args, **kwargs) -> Response:
         data = json.loads(request.body.decode('utf-8'))
@@ -616,84 +652,15 @@ class ReviewView(APIView):
 
         id = pk or request.query_params.get('id')
         product = Product.objects.get(id=id)
-        review = Review.objects.create(author=user, product=product, text=text, rate=rate, date=date)
-        review.save()
+
+        with transaction.atomic():
+            Review.objects.create(author=user, product=product, text=text, rate=rate, date=date)
 
         reviews = Review.objects.filter(product=product)
         serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# @extend_schema(methods=['PUT'], exclude=True)
-# class OrderDetailsView(RetrieveUpdateDestroyAPIView):
-#     """Представление для получения, изменения и удаления заказа"""
-#     queryset = Order.objects.all()
-#     permission_classes = [IsAuthenticated, IsOwner]
-#     authentication_classes = [SessionAuthentication]
-#
-#     def get_serializer_class(self):
-#         if self.request.method == "PUT":
-#             return UpdateOrderSerializer
-#         return OrderSerializer
-#
-#     def get(self, request, *args, **kwargs):
-#         return self.retrieve(request, *args, **kwargs)
-#
-#     def put(self, request, *args, **kwargs):
-#         user_id = request.user.id
-#         id = self.kwargs['pk']
-#
-#         try:
-#             order = Order.objects.get(user=user_id, id=id)
-#         except ObjectDoesNotExist:
-#             return Response({'message': 'Order with this pk is not exist or order is not yours'}, status=404)
-#
-#
-#
-#         product_id = request.data.get('add_product').split(':')[1]
-#         quantity = request.data.get('quantity_of_product_to_add')
-#
-#         try:
-#             quantity_int = int(quantity)
-#         except ValueError:
-#             return Response({'code': '400', 'message': 'unexpected value for product quantity'},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#
-#         if quantity_int == 0:
-#             pass
-#         else:
-#             product = Product.objects.get(id=product_id)
-#             if quantity_int > product.count:
-#                 return Response({'code': '400', 'message': f'we have only {product.count} items of '
-#                                                            f'{product.title}, but {quantity_int} was given. Try again'},
-#                                 status=status.HTTP_400_BAD_REQUEST)
-#             order_item, created = OrderItem.objects.get_or_create(order=order, product=product)
-#             order_item.quantity += quantity_int
-#             order_item.save()
-#
-#         delete_product_id = request.data.get('delete_product').split(':')[1]
-#         delete_quantity = request.data.get('quantity_of_product_to_delete')
-#
-#         try:
-#             delete_quantity_int = int(delete_quantity)
-#         except ValueError:
-#             return Response({'code': '400', 'message': 'unexpected value for product quantity'},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#
-#         if delete_quantity_int == 0:
-#             pass
-#         else:
-#             order_item = OrderItem.objects.get(product=Product.objects.get(id=delete_product_id), order=order)
-#             if delete_quantity_int > order_item.quantity:
-#                 return Response({'code': '400', 'message': f'we have only {order_item.quantity} items of '
-#                                                            f'{order_item.product.title}, but '
-#                                                            f'{delete_quantity_int} was given. Try again'},
-#                                 status=status.HTTP_400_BAD_REQUEST)
-#             elif delete_quantity_int == order_item.quantity:
-#                 order_item.delete()
-#             else:
-#                 order_item.quantity -= delete_quantity_int
-#                 order_item.save()
 
 
 # class OrdersList(ListCreateAPIView):
@@ -956,43 +923,5 @@ class ReviewView(APIView):
 
 
 
-# class ProfileViewSet(ModelViewSet):
-#     """Представление для получения и добавления профиля, а также изменения пароля и аватара"""
-#
-#     queryset = Profile.objects.all()
-#
-#     def get_serializer_class(self):
-#         if self.request.method == 'POST':
-#             return CreateProfileSerializer
-#         else:
-#             return ProfileSerializer
-#
-#     @action(methods=['get'], detail=True, permission_classes=[IsAuthenticated])
-#     def get_profile(self, request, pk=None):
-#         user = request.user
-#         try:
-#             profile = Profile.objects.get(user=user)
-#         except Profile.DoesNotExist:
-#             return Response({'code': '400', 'message': 'no such profile'}, status=status.HTTP_400_BAD_REQUEST)
-#         serializer = ProfileSerializer(profile)
-#         return Response(serializer.data)
-#
-#     @action(methods=['post'], detail=True, permission_classes=[IsAuthenticated])
-#     def post_profile(self, request, pk=None):
-#
-#         user = request.user
-#         if not Profile.objects.get(user=user):
-#             src = request.FILES.get('src')
-#             alt = request.data.get('alt')
-#             image = Image.objects.create(src=src, alt=alt)
-#             image.save()
-#             phone = request.data.get('phone')
-#
-#             with transaction.atomic():
-#                 profile = Profile.objects.create(user=user, avatar=image, phone=phone)
-#             profile.save()
-#
-#             serializer = ProfileSerializer(profile)
-#             return Response(serializer.data)
-#         else:
-#             return Response({'code': '400', 'message': 'profile already exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+

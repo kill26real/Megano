@@ -9,7 +9,6 @@ from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.validators import UniqueValidator
 from .models import Profile, Basket, BasketItem, ProfileImage
 from rest_framework.authtoken.models import Token
-from phonenumber_field.serializerfields import PhoneNumberField
 
 
 # class UserSerializer(serializers.ModelSerializer):

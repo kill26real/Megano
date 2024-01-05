@@ -70,6 +70,9 @@
                     <div v-if="paymentError !== null" class="Order-info Order-info_error">
                       <div class="Order-infoType">Оплата не прошла:</div>
                       <div class="Order-infoContent">${paymentError}$</div>
+
+                      <div class="Cart-block"><a class="btn btn_primary btn_lg" :href="`/payment/${orderId}/`">Оплатить</a></div>
+
                     </div>
                   </div>
                 </div>
@@ -99,8 +102,7 @@
                     <strong class="Cart-title">Итого:<span class="Cart-price">${totalCost}$$</span>
                     </strong>
                   </div>
-                  <div class="Cart-block"><a class="btn btn_primary btn_lg" :href="`/payment/${orderId}/`">Оплатить</a>
-                  </div>
+
                 </div>
               </div>
             </div>

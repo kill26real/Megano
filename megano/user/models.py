@@ -1,5 +1,4 @@
 from django.db import models
-from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import User
 from shop.models import Order, Product, Category
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -46,7 +45,8 @@ class ProfileImage(models.Model):
 
 class Basket(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_query_name='basket')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_query_name='basket', null=True, blank=True)
+    session_id = models.CharField(max_length=100, blank=True)
 
     @property
     def total_sum(self):
