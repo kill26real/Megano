@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from os import getenv
 from pathlib import Path
 import logging.config
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -31,7 +34,7 @@ SECRET_KEY = getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+# DEBUG = False
 DEBUG = getenv('DJANGO_DEBUG', "0") == "1"
 
 ALLOWED_HOSTS = [
@@ -50,8 +53,6 @@ if DEBUG:
     INTERNAL_IPS.extend(
         [ip[: ip.rfind(".")] + ".1" for ip in ips]
     )
-
-
 
 # Application definition
 
