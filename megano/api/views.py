@@ -182,7 +182,6 @@ class CatalogView(ListAPIView):
                 else:
                     categories = Category.objects.filter(parent=category)
                     queryset = queryset.filter(Q(category__in=categories) | Q(category=category))
-
             try:
                 tags = dict(self.request.query_params)['tags[]']
                 tags_ids = [int(i) for i in tags]
@@ -229,7 +228,6 @@ class CatalogView(ListAPIView):
                     queryset = queryset.order_by('sold_amount')
                 else:
                     queryset = queryset.order_by('-sold_amount')
-
         return queryset
 
     def get(self, request, *args, **kwargs):
@@ -239,10 +237,15 @@ class CatalogView(ListAPIView):
         end = ITEMS_ON_PAGE * page_number
 
         serializer = ProductShortSerializer(queryset[start:end], many=True)
+
+        if len(queryset) % ITEMS_ON_PAGE > 0:
+            last_page = len(queryset) // ITEMS_ON_PAGE + 1
+        else:
+            last_page = len(queryset) // ITEMS_ON_PAGE
         return Response(OrderedDict([
             ('items', serializer.data),
             ('currentPage', page_number),
-            ('lastPage', round(len(queryset) / ITEMS_ON_PAGE))
+            ('lastPage', last_page)
         ]))
 
 
@@ -278,10 +281,15 @@ class SalesList(APIView):
         queryset = Product.objects.filter(~Q(sale_price__exact=0) and Q(date_from__lte=now) and Q(date_to__gte=now))
 
         serializer = SaleSerializer(queryset[start:end], many=True)
+
+        if len(queryset) % ITEMS_ON_PAGE > 0:
+            last_page = len(queryset) // ITEMS_ON_PAGE + 1
+        else:
+            last_page = len(queryset) // ITEMS_ON_PAGE
         return Response(OrderedDict([
             ('items', serializer.data),
             ('currentPage', page_number),
-            ('lastPage', round(len(queryset)/ITEMS_ON_PAGE))
+            ('lastPage', last_page)
         ]))
 
 

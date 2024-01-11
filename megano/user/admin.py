@@ -3,7 +3,6 @@ from .models import Profile, Basket, BasketItem, ProfileImage
 from shop.models import Order, Product, Category
 from django.contrib.contenttypes import admin as cadmin
 from django.http import HttpRequest, HttpResponse
-from genericadmin.admin import GenericAdminModelAdmin, TabularInlineWithGeneric, StackedInlineWithGeneric
 from django.db.models import QuerySet
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User

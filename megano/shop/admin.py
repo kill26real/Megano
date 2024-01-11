@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.contenttypes import admin as cadmin
 from django.http import HttpRequest, HttpResponse
-from genericadmin.admin import GenericAdminModelAdmin, TabularInlineWithGeneric, StackedInlineWithGeneric
 from django.db.models import QuerySet
 from .models import Product, Order, Review, Category, Tag, Specification, Payment, OrderItem, ProductImage
 from mptt.admin import MPTTModelAdmin
@@ -100,7 +99,7 @@ class ProductReviewInLine(admin.TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(GenericAdminModelAdmin):
+class ProductAdmin(admin.ModelAdmin):
 
     actions = [
         mark_limited,

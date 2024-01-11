@@ -1,7 +1,6 @@
 from django.urls import path, include
 from django.views.generic import TemplateView
 from rest_framework import routers
-from rest_framework_nested import routers as rt
 
 from .views import (
     LogoutView,

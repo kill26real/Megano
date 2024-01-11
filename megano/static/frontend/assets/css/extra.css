@@ -3977,23 +3977,6 @@ a.Cart-title {
   }
 }
 
-.hidethis { animation: hideee 0s 3s forwards; }
-
-@keyframes hideee  { to { visibility: hidden; } }
-
-.showthis {
-  visibility: hidden;
-  animation: showDiv 3s forwards;
-}
-@keyframes showDiv {
-  0%, 99% {
-    visibility: hidden;
-  }
-  100% {
-    visibility: visible;
-  }
-}
-
 .Rating {
   font-family: Montserrat;
   align-items: center;
