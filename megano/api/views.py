@@ -92,8 +92,7 @@ class RegisterView(CreateAPIView):
             basket.session_id = ''
             basket.save()
 
-        return Response({'code': '200', 'user': user.username, 'message': 'successfully sign up'},
-                        status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK)
 
 
 class MyLoginView(APIView):
@@ -133,13 +132,9 @@ class MyLoginView(APIView):
 
                 basket_anonym.delete()
 
-            return Response({'code': '200', 'user': username, 'message': 'successfully login'},
-                            status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
         else:
-            return Response({
-                'status': 'Unauthorized',
-                'message': 'Username/password combination invalid.'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LogoutView(APIView):
@@ -151,11 +146,9 @@ class LogoutView(APIView):
         if request.user.is_authenticated:
             username = request.user.username
             logout(request)
-            return Response({'code': '200', 'user': username, 'message': 'successfully logout'},
-                            status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
         else:
-            return Response({'code': '500', 'message': 'user is not authenticated'},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CategoryList(APIView):
