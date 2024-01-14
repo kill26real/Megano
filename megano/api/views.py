@@ -67,9 +67,13 @@ class RegisterView(CreateAPIView):
         password = data.get("password", None)
         user = request.user
 
-        basket = None
-        if request.session['anonym']:
+        try:
             basket = Basket.objects.get(session_id=request.session['anonym'])
+        except:
+            basket = None
+        # basket = None
+        # if request.session['anonym']:
+        #     basket = Basket.objects.get(session_id=request.session['anonym'])
 
         try:
             validate_password(password, user)
@@ -101,9 +105,14 @@ class MyLoginView(APIView):
         username = data.get('username', None)
         password = data.get('password', None)
 
-        basket_anonym = None
-        if request.session['anonym']:
+        try:
             basket_anonym = Basket.objects.get(session_id=request.session['anonym'])
+        except:
+            basket_anonym = None
+
+        # basket_anonym = None
+        # if request.session['anonym']:
+        #     basket_anonym = Basket.objects.get(session_id=request.session['anonym'])
 
         user = authenticate(username=username, password=password)
 
