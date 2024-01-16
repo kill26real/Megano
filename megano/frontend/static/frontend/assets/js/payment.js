@@ -26,6 +26,7 @@ var mix = {
 				this.code = ''
 				location.assign('/')
 			}).catch(() => {
+			    alert('Ошибка при оплате')
 			 	console.warn('Ошибка при оплате')
 			})
 		}

@@ -94,7 +94,7 @@
             </div>
             <div class="Tabs-wrap">
               <div class="Tabs-block" id="description">
-                <div v-html="product.fullDescription"></div>
+                <div v-html="product.full_description"></div>
 
                 
                 <div class="clearfix">
@@ -145,12 +145,12 @@
                     </div>
                     <div class="form-group">
                       <div class="row">
-                        <div class="row-block">
-                          <input class="form-input" id="name" name="name" type="text" placeholder="Name" v-model="review.author"/>
-                        </div>
-                        <div class="row-block">
-                          <input class="form-input" id="email" name="email" type="text" placeholder="Email" v-model="review.email"/>
-                        </div>
+<!--                        <div class="row-block">-->
+<!--                          <input class="form-input" id="name" name="name" type="text" placeholder="Name" v-model="review.author"/>-->
+<!--                        </div>-->
+<!--                        <div class="row-block">-->
+<!--                          <input class="form-input" id="email" name="email" type="text" placeholder="Email" v-model="review.email"/>-->
+<!--                        </div>-->
                         <div class="row-block">
                           <select name="rate" id="rate" v-model="review.rate">
                             <optgroup label="rate">

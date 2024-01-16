@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.contrib.contenttypes import admin as cadmin
 from django.http import HttpRequest, HttpResponse
-from genericadmin.admin import GenericAdminModelAdmin, TabularInlineWithGeneric, StackedInlineWithGeneric
 from django.db.models import QuerySet
-from .models import Product, Order, Review, Category, Subcategory, Image, Tag, Specification, Sale, Payment, OrderItem
+from .models import Product, Order, Review, Category, Tag, Specification, Payment, OrderItem, ProductImage
+from mptt.admin import MPTTModelAdmin
+from django.utils.safestring import mark_safe
 
 
 
@@ -24,8 +25,8 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderItemInLine,
     ]
-    list_display = 'id', 'user', 'created_at', 'delivery_type', 'payment_type', \
-        'total_cost', 'status', 'city', 'delivery_adress', 'promocode'
+    list_display = 'id', 'user', 'created_at', 'delivery', 'payment_type', \
+        'total_cost', 'status', 'city', 'address', 'full_name', 'email', 'phone'
 
     def get_queryset(self, request):
         return Order.objects.select_related('user')
@@ -81,8 +82,8 @@ def unmark_free_delivery(modeladmin: admin.ModelAdmin, request: HttpRequest, que
     queryset.update(free_delivery=False)
 
 
-class ImageInline(cadmin.GenericTabularInline):
-    model = Image
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
 
 
 class ProductTagInline(admin.StackedInline):
@@ -98,7 +99,7 @@ class ProductReviewInLine(admin.TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(GenericAdminModelAdmin):
+class ProductAdmin(admin.ModelAdmin):
 
     actions = [
         mark_limited,
@@ -108,14 +109,13 @@ class ProductAdmin(GenericAdminModelAdmin):
         ProductSpecificationInline,
         ProductTagInline,
         ProductReviewInLine,
-        ImageInline,
+        ProductImageInline,
     ]
-    list_display = 'id', 'category', 'subcategory', 'price', 'amount', 'sold_amount', 'created_at', 'name', 'description',  \
-        'limited', 'free_delivery', 'reviews_count', 'rating', 'slug'
+    list_display = 'id', 'category', 'price', 'count', 'sold_amount', 'date', 'title', 'description',  \
+       'full_description', 'limited', 'free_delivery', 'reviews', 'rating', 'slug'
 
     def get_queryset(self, request):
-        return Product.objects.prefetch_related('images', 'specifications', 'tags')
-
+        return Product.objects.prefetch_related('specifications', 'tags')
 
 
 
@@ -129,8 +129,10 @@ def mark_unarchived(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset
     queryset.update(archived=False)
 
 
-class CategoryProductInline(admin.StackedInline):
-    model = Product
+
+
+# class CategoryProductInline(admin.StackedInline):
+#     model = Product
 
 
 @admin.register(Category)
@@ -139,41 +141,15 @@ class CategoryAdmin(admin.ModelAdmin):
         mark_archived,
         mark_unarchived,
     ]
-    inlines = [
-        CategoryProductInline,
-        ImageInline,
-    ]
-    list_display = 'id', 'title', 'archived', 'slug'
+    list_display = 'id', 'title', 'archived', 'slug', 'parent', 'image'
 
     def get_queryset(self, request):
         return Category.objects.prefetch_related('products')
 
 
-
-
-class SubcategoryProductInline(admin.StackedInline):
-    model = Product
-
-
-@admin.register(Subcategory)
-class SubcategoryAdmin(admin.ModelAdmin):
-    actions = [
-        mark_archived,
-        mark_unarchived,
-    ]
-    inlines = [
-        SubcategoryProductInline,
-        ImageInline,
-    ]
-    list_display = 'id', 'title', 'category', 'archived', 'slug'
-
-    def get_queryset(self, request):
-        return Subcategory.objects.select_related('category').prefetch_related('products')
-
-
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = 'author', 'text', 'product', 'published_at', 'rate'
+    list_display = 'author', 'text', 'product', 'date', 'rate'
 
     def get_queryset(self, request):
         return Review.objects.select_related('author').select_related('product')
@@ -181,9 +157,16 @@ class ReviewAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(Image)
-class ImageAdmin(admin.ModelAdmin):
-    list_display = 'alt', 'img'
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = 'src', 'product'
+
+    def image_show(self, obj):
+        if obj.src:
+            return mark_safe("<img src='{}' width='60' />".format(obj.src))
+        return "None"
+
+    image_show.__name__ = "Картинка"
 
 
 
@@ -208,14 +191,4 @@ class SpecificationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return Specification.objects.prefetch_related('products')
-
-
-
-
-@admin.register(Sale)
-class SaleAdmin(admin.ModelAdmin):
-    list_display = 'id', 'old_price', 'new_price', 'date_from', 'date_to', 'product',
-
-    def get_queryset(self, request):
-        return Sale.objects.select_related('product')
 
