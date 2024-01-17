@@ -10,7 +10,7 @@ services:
 #    - "--bind"
 #    - '0.0.0.0:8080'
     ports: [
-      '8000:8080'
+      '8000:8000'
     ]
     restart: always
     env_file:
@@ -22,6 +22,10 @@ services:
         max-size: "200k"
     volumes:
       - ./database:/app/database
+#volumes:
+#  database:
+
+
 #      driver: loki
 #      options:
 ##        loki-url: http://host.docker.internal:3100/loki/api/v1/push
