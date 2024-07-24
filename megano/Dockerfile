@@ -13,8 +13,9 @@ RUN cd /app && poetry install
 COPY diploma-frontend-0.6.tar.gz /app/
 
 RUN pip install diploma-frontend-0.6.tar.gz
-COPY . .`
+COPY . .
 
 RUN pip install gunicorn
 
-CMD ["gunicorn", "mysite.wsgi:application", "--bind", "0.0.0.0:8000"]
+#CMD python manage.py migrate && python manage.py runserver 0.0.0.0:8000
+CMD python manage.py migrate && gunicorn megano.wsgi:application --bind 0.0.0.0:8000
