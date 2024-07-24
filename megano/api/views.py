@@ -535,7 +535,7 @@ class PaymentView(APIView):
         if int(year) < 10 or int(year) > 99:
             error += 'Месяц должен быть в диапазоне от 10 до 99.'
 
-        if int(number) % int(code) == 0 and not error: paid = True
+        if not error: paid = True
         else: paid = False
 
         with transaction.atomic():
@@ -641,7 +641,7 @@ class TagListView(APIView):
 
 
 class ProductDetailsView(RetrieveAPIView):
-    """Представление для получения детального описания продукта"""
+    """Представление для получения детального продукта"""
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = (AllowAny,)
